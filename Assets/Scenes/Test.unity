@@ -446,8 +446,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e986cb448f2c9e479ecb5887681c37c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bluePortalPrefab: {fileID: 3744818792465037851, guid: 345f16528c99ac343bdb95085a50d6f9, type: 3}
-  orangePortalPrefab: {fileID: 5929953119372548395, guid: 4f6ebe5d624836944a14559a8ec2066f, type: 3}
+  bluePortalPrefab: {fileID: 6041617004823646800, guid: 2f16b2cc154dbf64bb8f39ffa48aab42, type: 3}
+  orangePortalPrefab: {fileID: 7166335357926676058, guid: 0cd7648a75ac41f469f8cc12421d25c5, type: 3}
 --- !u!4 &595801940
 Transform:
   m_ObjectHideFlags: 0
@@ -514,7 +514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

@@ -33,4 +33,19 @@ public class PlayerMouseLook : MonoBehaviour
 
         cameraRoot.localRotation = Quaternion.Euler(pitch, 0, 0);
     }
+
+    public void SyncPitchFromCamera()
+    {
+        pitch = cameraRoot.localEulerAngles.x;
+        if (pitch > 180) pitch -= 360f;
+    }
+
+    public void ForceSetYaw(Quaternion worldYawRot)
+    {
+        //body yaw 세팅
+        playerBody.rotation = worldYawRot;
+
+        //pitch는 그대로 유지
+        cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+    }
 }
