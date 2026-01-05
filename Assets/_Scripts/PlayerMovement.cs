@@ -17,6 +17,8 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        rb.freezeRotation = true;
     }
 
     private void OnEnable()
@@ -34,6 +36,8 @@ public class PlayerMovement : MonoBehaviour
         CheckGround();
         Move();
         ApplyGravity();
+
+        rb.angularVelocity = Vector3.zero;
     }
 
     void Move()

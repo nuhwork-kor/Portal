@@ -24,6 +24,10 @@ public class Portal : MonoBehaviour
     PortalLinkState linkState = PortalLinkState.Unlinked;
     PortalTravellerState travellerState = PortalTravellerState.Outside;
 
+    //캐싱
+    PlayerMouseLook playerMouseLook;
+    Transform playerBody;
+    Rigidbody rb;
 
     /// <summary>
     /// 초기화
@@ -74,14 +78,14 @@ public class Portal : MonoBehaviour
       - portalPlane.forward * 0.05f;
 
         Vector3 halfExtents = new Vector3(
-            1.0f,  
-            2.0f,  
-            0.1f    
+            1.0f,
+            2.0f,
+            0.1f
         );
 
         Quaternion rot = portalPlane.rotation;
 
-        // 🔴 디버그 시각화 (씬뷰)
+        //디버그 시각화 (씬뷰)
         DebugDrawOverlapBox(center, halfExtents, rot, Color.red, 1f);
 
         Collider[] hits = Physics.OverlapBox(
@@ -128,7 +132,7 @@ public class Portal : MonoBehaviour
             previousSide < 0f &&
             currentSide >= 0f;
 
-        if(fullyPassed)
+        if (fullyPassed)
         {
             Teleport(other.transform);
             return;
@@ -172,40 +176,58 @@ public class Portal : MonoBehaviour
 
     void Teleport(Transform player)
     {
+        //최초 1회 캐싱
+        CachePlayerRefs(player);
+
         Collider playerCol = player.GetComponent<Collider>();
         ExitHalfInside(playerCol);
 
         travellerState = PortalTravellerState.Teleported;
 
-        //입구 포탈 기준 위치
-        Vector3 localPos = portalPlane.InverseTransformPoint(player.position);
-        //앞뒤 반전시켜주기
-        localPos.z = -localPos.z;
+        Vector3 localPos = portalPlane.InverseTransformPoint(player.position);              //위치 변환
+        localPos.z = -localPos.z;                                                           //앞뒤 반전시켜주기
+        Vector3 newWorldPos = linkedPortal.portalPlane.TransformPoint(localPos);            //출구 포탈 기준 월드 위치
 
-        //출구 포탈 기준 월드 위치
-        Vector3 newWorldPos = linkedPortal.portalPlane.TransformPoint(localPos);
+        //출구에서 살짝 밀기
+        newWorldPos += linkedPortal.portalPlane.forward * 0.6f;
 
-        ////회전 변환
-        //Quaternion localRot = Quaternion.Inverse(portalPlane.rotation) * player.rotation;
-        ////회전 반전
-        //Quaternion flip = Quaternion.AngleAxis(180f, Vector3.up);
+        //rigidbody 안전장치
+        if (rb != null)
+        {
+            rb.position = newWorldPos;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
 
-        //회전 Yaw만
-        float playerYaw = player.eulerAngles.y;
+        //텔레포트 후 Pitch재설정
 
-        float portalDeltaYaw =
-            Quaternion.Angle(
-                portalPlane.rotation,
-                linkedPortal.portalPlane.rotation
-                );
+        if (playerMouseLook != null)
+        {
+            Vector3 fLocal = portalPlane.InverseTransformDirection(playerBody.forward);
 
-        float newYaw = playerYaw + portalDeltaYaw + 180f;
+            fLocal.x = -fLocal.x;
+            fLocal.z = -fLocal.z;
 
-        player.SetPositionAndRotation(newWorldPos, Quaternion.Euler(0f, newYaw, 0f));
+            Vector3 fWorld = linkedPortal.portalPlane.TransformDirection(fLocal);
+
+            Vector3 flat = Vector3.ProjectOnPlane(fWorld, Vector3.up);
+            Quaternion newYaw = Quaternion.LookRotation(flat, Vector3.up);
+
+            playerMouseLook.ForceSetYaw(newYaw);
+        }
 
         travellerState = PortalTravellerState.Outside;
 
         previousSide = 0f;
+    }
+
+    void CachePlayerRefs(Transform player)
+    {
+        if (playerMouseLook != null) return;
+
+        playerMouseLook = player.GetComponentInChildren<PlayerMouseLook>();
+        playerBody = playerMouseLook.playerBody;
+        rb = player.GetComponent<Rigidbody>();
     }
 
     public void Reposition(Vector3 pos, Quaternion rot)
