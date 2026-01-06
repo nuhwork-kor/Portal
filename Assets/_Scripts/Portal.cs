@@ -6,6 +6,9 @@ public class Portal : MonoBehaviour
     [Header("연결된 포탈")]
     public Portal linkedPortal;
 
+    [Header("포탈 카메라")]
+    public PortalCamera portalCamera;
+
     [Header("Refs")]
     public Transform portalPlane;           //논리 평면
     public Collider portalTrigger;          //HalfInsde 판정용
@@ -20,7 +23,6 @@ public class Portal : MonoBehaviour
     [Header("레이어")]
     int playerLayer = 3;
 
-    //초기화
     PortalLinkState linkState = PortalLinkState.Unlinked;
     PortalTravellerState travellerState = PortalTravellerState.Outside;
 
@@ -28,6 +30,8 @@ public class Portal : MonoBehaviour
     PlayerMouseLook playerMouseLook;
     Transform playerBody;
     Rigidbody rb;
+    Camera playerCam;
+    bool camSetupDone = false;
 
     /// <summary>
     /// 초기화
@@ -36,6 +40,33 @@ public class Portal : MonoBehaviour
     {
         SetLinkState(PortalLinkState.Unlinked);
         SetBoundaryActive(false);
+
+        //portalCamera 캐싱
+        if (portalCamera == null) portalCamera = GetComponentInChildren<PortalCamera>(true);
+    }
+
+    private void Start()
+    {
+        playerCam = Camera.main;
+    }
+
+    public void ActivateCamera(Camera playerCamera)
+    {
+        if (!portalCamera) return;
+        if (!linkedPortal || !linkedPortal.portalPlane) return;
+        if (!portalPlane) return;
+
+        portalCamera.SetUP(
+            playerCamera,
+            portalPlane,
+            linkedPortal.portalPlane
+        );
+    }
+
+    public void DeactivateCamera()
+    {
+        if (!portalCamera) return;
+        portalCamera.Clear();
     }
 
     /// <summary>
@@ -46,8 +77,22 @@ public class Portal : MonoBehaviour
     {
         linkedPortal = other;
         SetLinkState(other != null ? PortalLinkState.Linked : PortalLinkState.Unlinked);
+
+        if (linkedPortal == null)
+        {
+            DeactivateCamera();
+            return;
+        }
+
+        if (!playerCam) playerCam = Camera.main;
+
+        ActivateCamera(playerCam);
     }
 
+    /// <summary>
+    /// 포탈 연결됐는지 체크용
+    /// </summary>
+    /// <param name="state"></param>
     void SetLinkState(PortalLinkState state)
     {
         linkState = state;
@@ -211,9 +256,13 @@ public class Portal : MonoBehaviour
             Vector3 fWorld = linkedPortal.portalPlane.TransformDirection(fLocal);
 
             Vector3 flat = Vector3.ProjectOnPlane(fWorld, Vector3.up);
-            Quaternion newYaw = Quaternion.LookRotation(flat, Vector3.up);
 
-            playerMouseLook.ForceSetYaw(newYaw);
+            //flat이 0벡터면 LookRotation 튐 방지
+            if(flat.sqrMagnitude > 0.0001f)
+            {
+                Quaternion newYaw = Quaternion.LookRotation(flat, Vector3.up);
+                playerMouseLook.ForceSetYaw(newYaw);
+            }
         }
 
         travellerState = PortalTravellerState.Outside;
