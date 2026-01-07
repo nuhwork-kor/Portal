@@ -8,16 +8,20 @@ public class InputManager : MonoBehaviour
     PlayerInput playerinput;
 
     //외부 공개용 인터페이스, 옵저버들
-    public static Vector2 Input { get; private set; }
+    public static Vector2 Move {  get; private set; }
+    public static Vector2 Look {  get; private set; }
     public static event Action OnJump;
 
     //Input System의 액션들
     InputAction moveAction;
+    InputAction lookAction;
     InputAction jumpAction;
 
     //콜백 함수들을 저장할 변수들
     Action<InputAction.CallbackContext> onMovePerformed;
     Action<InputAction.CallbackContext> onMoveCanceled;
+    Action<InputAction.CallbackContext> onLookPerformed;
+    Action<InputAction.CallbackContext> onLookCanceled;
     Action<InputAction.CallbackContext> onJumpPerformed;
 
 
@@ -25,21 +29,31 @@ public class InputManager : MonoBehaviour
     {
         //PlayerInput 컴포넌트 초기화
         playerinput = GetComponent<PlayerInput>();
+
         playerinput.defaultActionMap = "Player";
         playerinput.defaultControlScheme = "Keyboard&Mouse";
         playerinput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
 
         //액션 찾기
         moveAction = playerinput.actions.FindAction("Move");
+        lookAction = playerinput.actions.FindAction("Look");
         jumpAction = playerinput.actions.FindAction("Jump");
 
         //콜백 등록
         if (moveAction != null)
         {
-            onMovePerformed = ctx => Input = ctx.ReadValue<Vector2>();
-            onMoveCanceled = ctx => Input = Vector2.zero;
+            onMovePerformed = ctx => Move = ctx.ReadValue<Vector2>();
+            onMoveCanceled = ctx => Move = Vector2.zero;
             moveAction.performed += onMovePerformed;
             moveAction.canceled += onMoveCanceled;
+        }
+
+        if (lookAction != null)
+        {
+            onLookPerformed = ctx => Look = ctx.ReadValue<Vector2>();
+            onLookCanceled = ctx => Look = Vector2.zero;
+            lookAction.performed += onLookPerformed;
+            lookAction.canceled += onLookCanceled;
         }
 
         if (jumpAction != null)
@@ -62,6 +76,20 @@ public class InputManager : MonoBehaviour
             {
                 moveAction.canceled -= onMoveCanceled;
                 onMoveCanceled = null;
+            }
+        }
+
+        if(lookAction != null)
+        {
+            if(onLookPerformed != null)
+            {
+                lookAction.performed -= onLookPerformed;
+                onLookPerformed = null;
+            }
+            if(onLookCanceled != null)
+            {
+                lookAction.canceled -= onLookCanceled;
+                onLookCanceled = null;
             }
         }
 

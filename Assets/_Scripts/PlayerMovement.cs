@@ -14,21 +14,14 @@ public class PlayerMovement : MonoBehaviour
 
     bool isGrounded;
 
+    [SerializeField] Transform playerBody;
+    [SerializeField] float airControlMultiplier = 0.4f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
 
         rb.freezeRotation = true;
-    }
-
-    private void OnEnable()
-    {
-        InputManager.OnJump += HandleJump;
-    }
-
-    private void OnDisable()
-    {
-        InputManager.OnJump -= HandleJump;
     }
 
     private void FixedUpdate()
@@ -43,11 +36,22 @@ public class PlayerMovement : MonoBehaviour
     void Move()
     {
         //input값 받아오기
-        Vector2 input = InputManager.Input;
+        Vector2 input = InputManager.Move;
+        if (input.sqrMagnitude < 0.0001f) return;
+
+        //이동 기준
+        Vector3 forward = playerBody.forward;
+        Vector3 right = playerBody.right;
+
+        //수평면 고정(경사/피치 영향 제거)
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
+
 
         //플레이어 바라보는 방향 기준으로 이동 방향 구성
-        Vector3 dir = transform.forward * input.y +
-            transform.right * input.x;
+        Vector3 dir = transform.forward * input.y + transform.right * input.x;
 
         //대각선 이동 속도 보정
         if(dir.sqrMagnitude > 1f) dir.Normalize();
@@ -55,14 +59,17 @@ public class PlayerMovement : MonoBehaviour
         //현재 속도 가져오기
         Vector3 velocity = rb.linearVelocity;
 
+        //공중에 있을때 속도 감소
+        float control = isGrounded ? 1f : airControlMultiplier;
+
         //수평 이동 세팅
-        velocity.x = dir.x * moveSpeed;
-        velocity.z = dir.z * moveSpeed;
+        velocity.x = dir.x * moveSpeed * control;
+        velocity.z = dir.z * moveSpeed * control;
 
         rb.linearVelocity = velocity;
     }
 
-    void HandleJump()
+    public void Jump()
     {
         if (!isGrounded) return;
 

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Collider Event
+/// </summary>
 public class PortalTrigger : MonoBehaviour
 {
     Portal portal;
@@ -7,20 +10,16 @@ public class PortalTrigger : MonoBehaviour
     private void Awake()
     {
         portal = GetComponentInParent<Portal>();
+        GetComponent<Collider>().isTrigger = true;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        portal.HandleTriggerEnter(other);
+        portal.physics.OnEnter(other);
     }
 
     private void OnTriggerStay(Collider other)
     {
-        portal.HandleTriggerStay(other);
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        portal.HandleTriggerExit(other);
+        portal.physics.OnStay(other);
     }
 }

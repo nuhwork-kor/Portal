@@ -1,9 +1,8 @@
-using System;
 using UnityEngine;
 
 public class PortalPool : MonoBehaviour
 {
-    public static PortalPool Instance {  get; private set; }
+    public static PortalPool Instance { get; private set; }
 
     [Header("포탈 프리팹")]
     [SerializeField] Portal bluePortalPrefab;
@@ -14,7 +13,7 @@ public class PortalPool : MonoBehaviour
 
     private void Awake()
     {
-        if(Instance != null)
+        if (Instance != null)
         {
             Destroy(gameObject);
             return;
@@ -36,15 +35,10 @@ public class PortalPool : MonoBehaviour
 
     private void LinkPortals()
     {
-        bluePortalInstance.SetLinkedPortal(orangePortalInstance);
-        orangePortalInstance.SetLinkedPortal(bluePortalInstance);
+        bluePortalInstance.LinkTo(orangePortalInstance);
+        orangePortalInstance.LinkTo(bluePortalInstance);
     }
 
-
-    /// <summary>
-    /// public API
-    /// </summary>
-    /// <returns></returns>
     public Portal GetBluePortal() => bluePortalInstance;
     public Portal GetOrangePortal() => orangePortalInstance;
 }
