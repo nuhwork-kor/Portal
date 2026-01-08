@@ -87,7 +87,7 @@ public class PortalPlacementValidator : MonoBehaviour
         // 포탈 forward는 -hitNormal로 만들었음.
         // 표면 안쪽으로 쏘고 싶으면 portalForward(=placeRot*forward) 방향으로 쏘면 됨.
         Vector3 portalForward = req.placeRotation * Vector3.forward;
-        Vector3 castDir = portalForward; // ✅ “표면 쪽”이 맞게 설계해둔 쪽으로 일관
+        Vector3 castDir = portalForward;
 
         for (int i = 0; i < localCorners.Length; i++)
         {

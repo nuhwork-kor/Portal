@@ -26,6 +26,11 @@ public class PortalRenderCamera : MonoBehaviour
         portalCamera.enabled = false; // 자동 렌더 금지
         request = new UniversalRenderPipeline.SingleCameraRequest();
     }
+    public void SetPlayerCamera(Camera cam)
+    {
+        if (cam) playerCamera = cam;
+        else if (!playerCamera) playerCamera = Camera.main;
+    }
 
     public void RenderPortal(Portal inPortal, Portal outPortal, RenderTexture targetRT)
     {

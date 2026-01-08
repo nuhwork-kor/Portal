@@ -5,26 +5,24 @@ public class PortalScreen : MonoBehaviour
 {
     [Header("Renderer")]
     [SerializeField] private Renderer screenRenderer;
-
-    [Header("Properties")]
-    [SerializeField] private string textureProperty = "_BaseMap";   // URP Lit/Unlit 대부분 _BaseMap
-    [SerializeField] private string colorProperty = "_BaseColor"; // URP Lit/Unlit 대부분 _BaseColor
+    public Renderer ScreenRenderer => screenRenderer;
 
     [Header("Unlinked Look")]
+    [SerializeField] private Material unlinkedMaterial; // 있으면 이걸로 "검정" 처리
+
+    [Header("Properties")]
+    [SerializeField] private string textureProperty = "_BaseMap";
+    [SerializeField] private string colorProperty = "_BaseColor";
     [SerializeField] private Color unlinkedColor = Color.black;
 
     private RenderTexture linkedRT;
     private bool isLinked;
-
     private MaterialPropertyBlock mpb;
-
-    public Renderer ScreenRenderer => screenRenderer;
 
     private void Awake()
     {
         if (!screenRenderer) screenRenderer = GetComponent<Renderer>();
         mpb = new MaterialPropertyBlock();
-        Apply();
     }
 
     public void SetLinked(bool value)
@@ -43,20 +41,26 @@ public class PortalScreen : MonoBehaviour
     {
         if (!screenRenderer) return;
 
-        screenRenderer.GetPropertyBlock(mpb);
-
-        // 링크 안 됨 OR RT 없음 => 검정
+        // 링크 안 됨 or RT 없음 -> 검정
         if (!isLinked || linkedRT == null)
         {
+            if (unlinkedMaterial != null)
+            {
+                screenRenderer.sharedMaterial = unlinkedMaterial;
+                return;
+            }
+
+            // 머티리얼 교체 없이 색/텍스처만 처리
+            screenRenderer.GetPropertyBlock(mpb);
             mpb.SetTexture(textureProperty, null);
             mpb.SetColor(colorProperty, unlinkedColor);
             screenRenderer.SetPropertyBlock(mpb);
             return;
         }
 
-        // 링크 됨 + RT 있음 => RT 표시
+        // 링크 됨 + RT 있음 -> RT 표시
+        screenRenderer.GetPropertyBlock(mpb);
         mpb.SetTexture(textureProperty, linkedRT);
-        // 색은 기본값 유지(흰색이 보통). 원하면 여기서 흰색 고정도 가능.
         screenRenderer.SetPropertyBlock(mpb);
     }
 }

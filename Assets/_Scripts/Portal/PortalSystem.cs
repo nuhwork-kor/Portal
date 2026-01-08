@@ -81,6 +81,7 @@ public class PortalSystem : MonoBehaviour
 
         // 확정
         target.Reposition(placePos, placeRot);
+        target.SetPlaced(true);
         return true;
     }
 }
