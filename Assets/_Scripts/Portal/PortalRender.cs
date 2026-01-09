@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using RenderPipeline = UnityEngine.Rendering.RenderPipelineManager;
 
 public class PortalRender : MonoBehaviour
@@ -23,7 +22,7 @@ public class PortalRender : MonoBehaviour
 
     private void Awake()
     {
-        if (!playerCamera) playerCamera = GetComponent<Camera>();
+        if (!playerCamera) playerCamera = Camera.main;
         if (!renderCamera) renderCamera = FindAnyObjectByType<PortalRenderCamera>();
 
         if (!bluePortal || !orangePortal)
@@ -34,7 +33,8 @@ public class PortalRender : MonoBehaviour
         }
 
         CreateOrResizeRTs();
-        // 시작은 검정
+
+        // 시작은 검정(닫힘)
         bluePortal.Screen?.SetLinked(false);
         orangePortal.Screen?.SetLinked(false);
     }
@@ -55,10 +55,14 @@ public class PortalRender : MonoBehaviour
         ReleaseRT(orangeRT);
     }
 
+    // ★ beginCameraRendering 델리게이트 시그니처는 반드시 이 형태여야 함
     private void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam)
     {
         // 메인 카메라에서만 실행
         if (cam != playerCamera) return;
+
+        // 렌더카메라가 playerCamera를 참조하도록 보정(인스펙터 누락 안전장치)
+        if (renderCamera) renderCamera.SetPlayerCamera(playerCamera);
 
         // 둘 다 배치 + 링크되어야 렌더 가능
         bool ready =
@@ -84,14 +88,14 @@ public class PortalRender : MonoBehaviour
         orangePortal.Screen?.SetRenderTexture(orangeRT);
 
         // “보이는 포탈만” 렌더 (성능)
-        if (bluePortal.Screen && bluePortal.Screen.ScreenRenderer && bluePortal.Screen.ScreenRenderer.isVisible)
+        if (bluePortal.Screen != null && bluePortal.Screen.ScreenRenderer != null && bluePortal.Screen.ScreenRenderer.isVisible)
         {
-            renderCamera.RenderPortal(context, bluePortal, orangePortal, blueRT);
+            renderCamera.RenderPortal(bluePortal, orangePortal, blueRT);
         }
 
-        if (orangePortal.Screen && orangePortal.Screen.ScreenRenderer && orangePortal.Screen.ScreenRenderer.isVisible)
+        if (orangePortal.Screen != null && orangePortal.Screen.ScreenRenderer != null && orangePortal.Screen.ScreenRenderer.isVisible)
         {
-            renderCamera.RenderPortal(context, orangePortal, bluePortal, orangeRT);
+            renderCamera.RenderPortal(orangePortal, bluePortal, orangeRT);
         }
     }
 
@@ -115,6 +119,8 @@ public class PortalRender : MonoBehaviour
             };
         }
     }
+
+
 
     private void ReleaseRT(RenderTexture rt)
     {

@@ -17,7 +17,7 @@ public class PortalPlacementResolver : MonoBehaviour
         placeRot = default;
 
         if (!playerCamera) return false;
-        if (hitNormal.sqrMagnitude < 1e-6f) return false; // ✅ 이게 맞음
+        if (hitNormal.sqrMagnitude < 1e-6f) return false;
 
         Vector3 normal = hitNormal.normalized;
 
