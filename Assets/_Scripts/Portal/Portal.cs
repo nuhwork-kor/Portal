@@ -31,14 +31,20 @@ public class Portal : MonoBehaviour
 
     private void Awake()
     {
-        if (!plane) plane = transform;
+        if (!plane)
+        {
+            // 프리팹에 "Plane" 자식이 있으면 그걸 사용
+            var child = transform.Find("Plane");
+            plane = child ? child : transform;
+        }
+
         if (!screen) screen = GetComponentInChildren<PortalScreen>(true);
 
-        // 시작은 항상 “배치 안 됨 + 검정”
         isPlaced = false;
         screen?.SetLinked(false);
         screen?.SetRenderTexture(null);
     }
+
 
     public void LinkTo(Portal other)
     {
