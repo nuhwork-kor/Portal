@@ -13,7 +13,11 @@ public class PortalRenderCamera : MonoBehaviour
 
     [Header("Oblique Near Clip")]
     [SerializeField] private bool useObliqueClip = true;
-    [SerializeField] private float clipPlaneOffset = 0.02f;
+    [SerializeField] private float clipPlaneOffset = 0.002f;
+
+    [Header("Render Mask Fix (IMPORTANT)")]
+    [Tooltip("PortalCamera가 절대 렌더하면 안 되는 레이어(PortalScreen/PortalMask)를 제외한 마스크를 여기에 지정.")]
+    [SerializeField] private LayerMask portalCameraCullingMask = ~0;
 
     // URP 렌더 요청(새 API)
     private UniversalRenderPipeline.SingleCameraRequest request;
@@ -40,18 +44,25 @@ public class PortalRenderCamera : MonoBehaviour
 
         // playerCamera 기준 값 복사(FOV, clip, post, culling 등)
         portalCamera.CopyFrom(playerCamera);
+        //RT비율 강제로 맞추기
+        portalCamera.targetTexture = targetRT;
+        portalCamera.aspect = (float)targetRT.width / targetRT.height;
+        portalCamera.cullingMask = portalCameraCullingMask;
+        portalCamera.ResetProjectionMatrix();
 
         // 중요: PortalScreen 레이어는 PortalCamera에서 제외(피드백 방지)
         // -> 이건 인스펙터에서 portalCamera.cullingMask로 처리
-
+        // 렌더 요청 대상
         request.destination = targetRT;
 
         // 지원 여부 체크(안 하면 특정 파이프라인/카메라 조합에서 실패 가능)
         if (!RenderPipeline.SupportsRenderRequest(portalCamera, request))
             return;
 
+        int maxIter = Mathf.Max(1, iterations);
+
         // 재귀: 깊은 단계부터 그려서 얕은 단계에 반영
-        for (int i = iterations; i >= 0; --i)
+        for (int i = iterations; i >= 1; --i)
         {
             if (!TryBuildPose(inPortal, outPortal, i, out Vector3 pos, out Quaternion rot, out Transform clipPlane))
                 continue;
