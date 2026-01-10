@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: PortalMask
-  m_Shader: {fileID: 4800000, guid: d1f0e2463427478469f59b009039f0ff, type: 3}
+  m_Name: Portals_PortalMask_B
+  m_Shader: {fileID: 4800000, guid: a82e4f7204d92af4d851b2149ac99be4, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -22,9 +22,14 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _StencilRef: 1
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

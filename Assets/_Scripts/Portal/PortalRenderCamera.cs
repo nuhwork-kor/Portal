@@ -5,132 +5,192 @@ using UnityEngine.Rendering.Universal;
 public class PortalRenderCamera : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private Camera portalCamera;
-    [SerializeField] private Camera playerCamera;
+    [SerializeField] private Camera playerCamera;   // º¸Åë ÀÌ ½ºÅ©¸³Æ®°¡ ºÙÀº Ä«¸Ş¶ó
+    [SerializeField] private Camera portalCamera;   // ·»´õ Àü¿ë Ä«¸Ş¶ó(Enabled ²¨µÑ °Í)
+    [SerializeField] private Portal bluePortal;
+    [SerializeField] private Portal orangePortal;
 
     [Header("Recursion")]
-    [SerializeField, Range(0, 10)] private int iterations = 2;
+    [SerializeField, Range(0, 10)] private int iterations = 3;
 
     [Header("Oblique Near Clip")]
     [SerializeField] private bool useObliqueClip = true;
-    [SerializeField] private float clipPlaneOffset = 0.002f;
+    [SerializeField] private float clipPlaneOffset = 0.02f;
 
-    [Header("Render Mask Fix (IMPORTANT)")]
-    [Tooltip("PortalCameraê°€ ì ˆëŒ€ ë Œë”í•˜ë©´ ì•ˆ ë˜ëŠ” ë ˆì´ì–´(PortalScreen/PortalMask)ë¥¼ ì œì™¸í•œ ë§ˆìŠ¤í¬ë¥¼ ì—¬ê¸°ì— ì§€ì •.")]
+    [Header("PortalCamera Culling")]
+    [Tooltip("PortalCamera°¡ ·»´õÇÒ ·¹ÀÌ¾î. PortalSurface/PortalTrigger/Outline µîÀº Á¦¿Ü ÃßÃµ.")]
     [SerializeField] private LayerMask portalCameraCullingMask = ~0;
 
-    // URP ë Œë” ìš”ì²­(ìƒˆ API)
+    [Header("Optional tiny push (usually 0)")]
+    [Tooltip("¿Àºí¸®Å©°¡ Á¦´ë·Î¸é 0À¸·Î µÎ´Â°Ô Á¤¼®. (¶«»§¿ë)")]
+    [SerializeField] private float outPortalCamPush = 0.0f;
+
+    private RenderTexture blueRT;
+    private RenderTexture orangeRT;
+
     private UniversalRenderPipeline.SingleCameraRequest request;
+
+    private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
     private void Awake()
     {
-        if (!portalCamera) portalCamera = GetComponent<Camera>();
-        if (!playerCamera) playerCamera = Camera.main;
+        if (!playerCamera) playerCamera = GetComponent<Camera>();
 
-        portalCamera.enabled = false; // ìë™ ë Œë” ê¸ˆì§€
+        CreateOrResizeRTs(Screen.width, Screen.height);
+        AssignRTsToSurfaces();
+
+        if (portalCamera)
+        {
+            portalCamera.enabled = false;
+            portalCamera.cullingMask = portalCameraCullingMask;
+        }
+
         request = new UniversalRenderPipeline.SingleCameraRequest();
     }
-    public void SetPlayerCamera(Camera cam)
+
+    private void OnEnable()
     {
-        if (cam) playerCamera = cam;
-        else if (!playerCamera) playerCamera = Camera.main;
+        RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
     }
 
-    public void RenderPortal(Portal inPortal, Portal outPortal, RenderTexture targetRT)
+    private void OnDisable()
     {
-        if (!playerCamera || !portalCamera) return;
-        if (!inPortal || !outPortal) return;
-        if (!targetRT) return;
+        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+    }
 
-        // playerCamera ê¸°ì¤€ ê°’ ë³µì‚¬(FOV, clip, post, culling ë“±)
-        portalCamera.CopyFrom(playerCamera);
-        //RTë¹„ìœ¨ ê°•ì œë¡œ ë§ì¶”ê¸°
-        portalCamera.targetTexture = targetRT;
-        portalCamera.aspect = (float)targetRT.width / targetRT.height;
-        portalCamera.cullingMask = portalCameraCullingMask;
-        portalCamera.ResetProjectionMatrix();
+    private void OnDestroy()
+    {
+        ReleaseRT(ref blueRT);
+        ReleaseRT(ref orangeRT);
+    }
 
-        // ì¤‘ìš”: PortalScreen ë ˆì´ì–´ëŠ” PortalCameraì—ì„œ ì œì™¸(í”¼ë“œë°± ë°©ì§€)
-        // -> ì´ê±´ ì¸ìŠ¤í™í„°ì—ì„œ portalCamera.cullingMaskë¡œ ì²˜ë¦¬
-        // ë Œë” ìš”ì²­ ëŒ€ìƒ
-        request.destination = targetRT;
+    private void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam)
+    {
+        if (cam != playerCamera) return;
 
-        // ì§€ì› ì—¬ë¶€ ì²´í¬(ì•ˆ í•˜ë©´ íŠ¹ì • íŒŒì´í”„ë¼ì¸/ì¹´ë©”ë¼ ì¡°í•©ì—ì„œ ì‹¤íŒ¨ ê°€ëŠ¥)
-        if (!RenderPipeline.SupportsRenderRequest(portalCamera, request))
-            return;
+        if (!bluePortal || !orangePortal || !portalCamera) return;
+        if (!bluePortal.IsPlaced || !orangePortal.IsPlaced) return;
 
-        int maxIter = Mathf.Max(1, iterations);
-
-        // ì¬ê·€: ê¹Šì€ ë‹¨ê³„ë¶€í„° ê·¸ë ¤ì„œ ì–•ì€ ë‹¨ê³„ì— ë°˜ì˜
-        for (int i = iterations; i >= 1; --i)
+        // RT ¸®»çÀÌÁî
+        if (blueRT == null || blueRT.width != Screen.width || blueRT.height != Screen.height)
         {
-            if (!TryBuildPose(inPortal, outPortal, i, out Vector3 pos, out Quaternion rot, out Transform clipPlane))
-                continue;
+            CreateOrResizeRTs(Screen.width, Screen.height);
+            AssignRTsToSurfaces();
+        }
 
-            portalCamera.transform.SetPositionAndRotation(pos, rot);
+        // Portal Ç¥¸é Ç¥½Ã ¿©ºÎ °»½Å (³× Portal.cs¿¡ ÀÖ´Â ÇÔ¼ö ±âÁØ)
+        bluePortal.RefreshSurfaceVisibility();
+        orangePortal.RefreshSurfaceVisibility();
 
-            if (useObliqueClip && clipPlane)
-                ApplyObliqueClip(clipPlane);
+        // ÇÃ·¹ÀÌ¾î Ä«¸Ş¶ó ¼³Á¤ ÀÏºÎ µ¿±âÈ­ (FOV/Aspect ¾È ¸ÂÀ¸¸é ¾î»öÇØÁü)
+        portalCamera.fieldOfView = playerCamera.fieldOfView;
+        portalCamera.aspect = playerCamera.aspect;
+        portalCamera.farClipPlane = playerCamera.farClipPlane;
+        portalCamera.nearClipPlane = Mathf.Max(0.01f, playerCamera.nearClipPlane); // oblique ¾²´õ¶óµµ ³Ê¹« Å©¸é ºÒ¸®
 
-            RenderPipeline.SubmitRenderRequest(portalCamera, request);
+        if (bluePortal.SurfaceRenderer && bluePortal.SurfaceRenderer.isVisible)
+            RenderPortal(context, inPortal: bluePortal, outPortal: orangePortal, target: blueRT);
+
+        if (orangePortal.SurfaceRenderer && orangePortal.SurfaceRenderer.isVisible)
+            RenderPortal(context, inPortal: orangePortal, outPortal: bluePortal, target: orangeRT);
+    }
+
+    private void RenderPortal(ScriptableRenderContext context, Portal inPortal, Portal outPortal, RenderTexture target)
+    {
+        // inPortal Ç¥¸éÀº ²ô°í ·»´õ(ÇÇµå¹é ·çÇÁ ¹æÁö)
+        bool prevInSurface = inPortal.SurfaceRenderer && inPortal.SurfaceRenderer.enabled;
+        if (inPortal.SurfaceRenderer) inPortal.SurfaceRenderer.enabled = false;
+
+        portalCamera.targetTexture = target;
+        request.destination = target;
+
+        // ±íÀº °ÍºÎÅÍ ·»´õ
+        for (int i = iterations - 1; i >= 0; --i)
+        {
+            SetPortalCameraTransform(inPortal, outPortal, i);
 
             portalCamera.ResetProjectionMatrix();
+            if (useObliqueClip)
+                ApplyObliqueClipPlane(outPortal, clipPlaneOffset);
+
+            if (RenderPipeline.SupportsRenderRequest(portalCamera, request))
+                RenderPipeline.SubmitRenderRequest(portalCamera, request);
         }
+
+        portalCamera.targetTexture = null;
+        if (inPortal.SurfaceRenderer) inPortal.SurfaceRenderer.enabled = prevInSurface;
     }
 
-    // ië‹¨ê³„ ì¬ê·€ í¬ì¦ˆ(ì§„ì§œ "í¬íƒˆ-í¬íƒˆ-í¬íƒˆ..." ëŠë‚Œìœ¼ë¡œ ë§í¬ë¥¼ ë”°ë¼ê°€ë©° ëˆ„ì )
-    private bool TryBuildPose(
-        Portal startIn, Portal startOut, int iteration,
-        out Vector3 dstPos, out Quaternion dstRot,
-        out Transform clipPlane)
+    private void SetPortalCameraTransform(Portal inPortal, Portal outPortal, int iteration)
     {
-        dstPos = playerCamera.transform.position;
-        dstRot = playerCamera.transform.rotation;
-        clipPlane = startOut.Plane;
+        Transform inT = inPortal.Plane;
+        Transform outT = outPortal.Plane;
 
-        Portal a = startIn;
-        Portal b = startOut;
+        Transform camT = portalCamera.transform;
+        camT.SetPositionAndRotation(playerCamera.transform.position, playerCamera.transform.rotation);
 
-        for (int k = 0; k < iteration; k++)
+        for (int i = 0; i <= iteration; ++i)
         {
-            if (!a || !b) return false;
+            Vector3 relativePos = inT.InverseTransformPoint(camT.position);
+            relativePos = HalfTurn * relativePos;
+            camT.position = outT.TransformPoint(relativePos);
 
-            PortalMath.TransformPose(a.Plane, b.Plane, dstPos, dstRot, out dstPos, out dstRot);
-
-            // ë‹¤ìŒ ë‹¨ê³„ëŠ” "ì¶œêµ¬ê°€ ë‹¤ìŒ ì…êµ¬"ê°€ ë¨
-            clipPlane = b.Plane;
-
-            Portal nextA = b;
-            Portal nextB = b.LinkedPortal;
-            a = nextA;
-            b = nextB;
+            Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * camT.rotation;
+            relativeRot = HalfTurn * relativeRot;
+            camT.rotation = outT.rotation * relativeRot;
         }
 
-        return true;
+        if (outPortalCamPush != 0f)
+            camT.position += outT.forward * outPortalCamPush;
     }
 
-    private void ApplyObliqueClip(Transform portalPlane)
+    private void ApplyObliqueClipPlane(Portal outPortal, float offset)
     {
-        Vector3 normal = portalPlane.forward;
+        Transform t = outPortal.Plane;
 
-        // ì¹´ë©”ë¼ ìª½ì„ í–¥í•˜ë„ë¡ ë³´ì •
-        if (Vector3.Dot(normal, portalCamera.transform.forward) > 0f)
+        // ¡ÚÇÙ½É: normalÀÌ "Ç×»ó portalCamera ÂÊÀ» ÇâÇÏµµ·Ï" °­Á¦
+        Vector3 normal = t.forward;
+        if (Vector3.Dot(normal, portalCamera.transform.position - t.position) > 0f)
             normal = -normal;
 
-        Vector3 point = portalPlane.position + normal * clipPlaneOffset;
+        // offsetµµ Ä«¸Ş¶óÂÊÀ¸·Î »ìÂ¦ ´ç°Ü¼­(z-fighting/°æ°è ±ôºıÀÓ ¿ÏÈ­)
+        Vector3 pos = t.position + normal * offset;
 
-        Vector4 clipPlaneCameraSpace = CameraSpacePlane(portalCamera, point, normal);
+        Vector4 clipPlaneCameraSpace = CameraSpacePlane(portalCamera, pos, normal);
         portalCamera.projectionMatrix = portalCamera.CalculateObliqueMatrix(clipPlaneCameraSpace);
     }
 
-    private static Vector4 CameraSpacePlane(Camera cam, Vector3 point, Vector3 normal)
+    private static Vector4 CameraSpacePlane(Camera cam, Vector3 pos, Vector3 normal)
     {
-        Matrix4x4 worldToCam = cam.worldToCameraMatrix;
+        Matrix4x4 m = cam.worldToCameraMatrix;
+        Vector3 cpos = m.MultiplyPoint(pos);
+        Vector3 cnormal = m.MultiplyVector(normal).normalized;
+        return new Vector4(cnormal.x, cnormal.y, cnormal.z, -Vector3.Dot(cpos, cnormal));
+    }
 
-        Vector3 camNormal = worldToCam.MultiplyVector(normal).normalized;
-        Vector3 camPoint = worldToCam.MultiplyPoint(point);
+    private void AssignRTsToSurfaces()
+    {
+        if (bluePortal && bluePortal.SurfaceRenderer)
+            bluePortal.SurfaceRenderer.material.mainTexture = blueRT;
 
-        float d = -Vector3.Dot(camPoint, camNormal);
-        return new Vector4(camNormal.x, camNormal.y, camNormal.z, d);
+        if (orangePortal && orangePortal.SurfaceRenderer)
+            orangePortal.SurfaceRenderer.material.mainTexture = orangeRT;
+    }
+
+    private void CreateOrResizeRTs(int w, int h)
+    {
+        ReleaseRT(ref blueRT);
+        ReleaseRT(ref orangeRT);
+
+        blueRT = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { name = "PortalRT_Blue" };
+        orangeRT = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { name = "PortalRT_Orange" };
+    }
+
+    private void ReleaseRT(ref RenderTexture rt)
+    {
+        if (!rt) return;
+        rt.Release();
+        Destroy(rt);
+        rt = null;
     }
 }
