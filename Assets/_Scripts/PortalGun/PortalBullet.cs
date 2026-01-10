@@ -1,108 +1,133 @@
-using System;
 using UnityEngine;
 
 public class PortalBullet : MonoBehaviour
 {
-    Rigidbody rb;
-    Collider col;
-
-    PortalGunController.PortalShotType shotType;
-    float lifeTimer;
-    float maxLifeSeconds = 3.0f;
-    float remainingDistance;
-
-    PortalSystem portalSystem;
-
     [Header("Pool")]
-    [SerializeField] string poolKey = "PortalBullet";
+    [SerializeField] private string poolKey = "PortalBullet";
 
-    [Header("FX")]
-    [SerializeField] ParticleSystem onHitFx;
-    [SerializeField] TrailRenderer trail;
+    [Header("Life")]
+    [SerializeField] private float maxLifeSeconds = 3f;
+
+    [Header("Portal Pass-Through")]
+    [SerializeField] private float portalExitOffset = 0.08f;
+    [SerializeField] private float portalRehitCooldown = 0.05f;
+
+    private Rigidbody rb;
+
+    private PortalSystem.PortalType shotType;
+    private PortalSystem portalSystem;
+
+    private float lifeTimer;
+    private float remainingDistance;
+    private float portalCooldownTimer;
+
+    private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        col = rb.GetComponent<Collider>();
-
-        //탄환은 빠르게 날아가니까 CCD
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    /// <summary>
-    /// PortalGun에서 호출
-    /// </summary>
-    public void Launch(
-        PortalGunController.PortalShotType type,
-        Vector3 dir,
-        float speed,
-        float maxDistance,
-        PortalSystem system
-        )
+    public void Launch(PortalSystem.PortalType type, Vector3 dir, float speed, float maxDistance, PortalSystem system)
     {
         shotType = type;
         portalSystem = system;
 
-        //상태 리셋
         lifeTimer = 0f;
+        portalCooldownTimer = 0f;
         remainingDistance = maxDistance;
 
-        //물리 리셋
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        //trail/particle 리셋
-        if (onHitFx) onHitFx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        if (trail) trail.Clear();
-
-        //발사
-        rb.linearVelocity = dir.normalized * speed;
-        transform.forward = dir.normalized;
+        Vector3 v = dir.normalized * speed;
+        rb.linearVelocity = v;
+        transform.rotation = Quaternion.LookRotation(v.normalized, Vector3.up);
     }
 
     private void Update()
     {
-        //수명 관리
         lifeTimer += Time.deltaTime;
+        if (portalCooldownTimer > 0f) portalCooldownTimer -= Time.deltaTime;
 
-        //distance 기반 제한
         remainingDistance -= rb.linearVelocity.magnitude * Time.deltaTime;
 
         if (lifeTimer >= maxLifeSeconds || remainingDistance <= 0f)
-        {
             Despawn();
-        }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        //첫 접촉점 기준
+        if (collision.contactCount == 0) { Despawn(); return; }
+        if (portalCooldownTimer > 0f) return;
+
         ContactPoint cp = collision.contacts[0];
 
-        //포탈을 배치할 수 있는 표면인지 검사
-        if(portalSystem != null)
+        // 1) ��Ż ǥ���̸� ��� �õ�
+        if (collision.collider.CompareTag("Portal"))
         {
-            bool placed = portalSystem.PlacePortal(shotType, cp.point, cp.normal, collision.collider);
+            if (TryWarpThroughPortal(collision.collider, cp.point))
+            {
+                portalCooldownTimer = portalRehitCooldown;
+                return;
+            }
+
+            Despawn();
+            return;
+        }
+
+        // 2) �Ϲ� ǥ���̸� ��Ż ��ġ
+        if (portalSystem != null)
+        {
+            portalSystem.TryPlacePortal(shotType, cp.point, cp.normal, collision.collider);
         }
 
         Despawn();
     }
 
+    private bool TryWarpThroughPortal(Collider portalCollider, Vector3 hitPoint)
+    {
+        Portal inPortal = portalCollider.GetComponentInParent<Portal>();
+        if (!inPortal || !inPortal.IsPlaced) return false;
+
+        Portal outPortal = inPortal.OtherPortal;
+        if (!outPortal || !outPortal.IsPlaced) return false;
+
+        Transform inT = inPortal.Plane;
+        Transform outT = outPortal.Plane;
+
+        Vector3 dir = rb.linearVelocity.sqrMagnitude > 1e-6f ? rb.linearVelocity.normalized : transform.forward;
+
+        Vector3 relativePos = inT.InverseTransformPoint(hitPoint + dir * 0.05f);
+        relativePos = HalfTurn * relativePos;
+        Vector3 newPos = outT.TransformPoint(relativePos);
+
+        Vector3 relativeVel = inT.InverseTransformDirection(rb.linearVelocity);
+        relativeVel = HalfTurn * relativeVel;
+        Vector3 newVel = outT.TransformDirection(relativeVel);
+
+        // �ⱸ���� ��¦ ������
+        newPos += outT.forward * portalExitOffset;
+
+        rb.position = newPos;
+        rb.linearVelocity = newVel;
+
+        if (newVel.sqrMagnitude > 1e-6f)
+            transform.rotation = Quaternion.LookRotation(newVel.normalized, Vector3.up);
+
+        return true;
+    }
+
     private void Despawn()
     {
-        //물리 정지
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        //풀 반환
         if (ObjectPoolManager.Instance != null)
-        {
             ObjectPoolManager.Instance.ReturnToPool(poolKey, gameObject);
-        }
         else
-        {
             gameObject.SetActive(false);
-        }
     }
 }

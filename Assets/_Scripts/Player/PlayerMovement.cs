@@ -4,7 +4,7 @@ using UnityEngine.Rendering.Universal;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Settings")]
-    [SerializeField] float moveSpeed = 6f;
+    [SerializeField] float moveSpeed = 10f;
     [SerializeField] float jumpVelocity = 6f;
     [SerializeField] float gravityPower = 20f;
 

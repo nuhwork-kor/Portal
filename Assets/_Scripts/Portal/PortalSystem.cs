@@ -2,86 +2,68 @@ using UnityEngine;
 
 public class PortalSystem : MonoBehaviour
 {
+    public enum PortalType { Blue, Orange }
+
     [Header("Refs")]
     [SerializeField] private Camera playerCamera;
-
-    [Header("Portals")]
     [SerializeField] private Portal bluePortal;
     [SerializeField] private Portal orangePortal;
 
-    [Header("Modules")]
-    [SerializeField] private PortalPlacementResolver resolver;
-    [SerializeField] private PortalPlacementValidator validator;
+    [Header("Placement Mask")]
+    [SerializeField] private LayerMask placeableMask;   // Wall/Ground
 
-    [Header("Masks")]
-    [SerializeField] private LayerMask placeableSurfaceMask;
-    [SerializeField] private LayerMask overlapMask;
-
-    [Header("Placement")]
-    [SerializeField] private float surfaceOffset = 0.01f;
+    [Header("Placement Tuning")]
+    [SerializeField] private float surfaceOffset = 0.002f;
 
     private void Awake()
     {
         if (!playerCamera) playerCamera = Camera.main;
-        if (!resolver) resolver = FindAnyObjectByType<PortalPlacementResolver>();
-        if (!validator) validator = FindAnyObjectByType<PortalPlacementValidator>();
 
-        if (!bluePortal || !orangePortal)
+        // ¸µÅ© °íÁ¤
+        if (bluePortal && orangePortal)
         {
-            Debug.LogError("[PortalSystem] Missing portal refs. Assign Blue/Orange portals.");
-            enabled = false;
-            return;
+            bluePortal.LinkTo(orangePortal);
+            orangePortal.LinkTo(bluePortal);
+
+            bluePortal.SetPlaced(false);
+            orangePortal.SetPlaced(false);
         }
-
-        // ë§í¬ ê´€ê³„ëŠ” ë¯¸ë¦¬ ì„¸íŒ…í•´ë„ ë¨(PortalRenderê°€ â€œë‘˜ ë‹¤ ë°°ì¹˜ë¨â€ ì¡°ê±´ìœ¼ë¡œë§Œ ì‚¬ìš©)
-        bluePortal.LinkTo(orangePortal);
-        orangePortal.LinkTo(bluePortal);
-
-        // ì‹œì‘ì€ ë°°ì¹˜ ì•ˆ ë¨
-        bluePortal.SetPlaced(false);
-        orangePortal.SetPlaced(false);
     }
 
-    public bool PlacePortal(
-        PortalGunController.PortalShotType type,
-        Vector3 hitPoint,
-        Vector3 hitNormal,
-        Collider hitCollider)
+    public bool TryPlacePortal(PortalType type, Vector3 hitPoint, Vector3 hitNormal, Collider hitCollider)
     {
-        if (!playerCamera || !resolver || !validator) return false;
-        if (!hitCollider) return false;
+        if (!playerCamera || !hitCollider) return false;
 
-        // í‘œë©´ ë ˆì´ì–´ ì²´í¬
-        if ((placeableSurfaceMask.value & (1 << hitCollider.gameObject.layer)) == 0)
+        // ¹èÄ¡ °¡´É ·¹ÀÌ¾îÀÎÁö Ã¼Å©
+        if ((placeableMask.value & (1 << hitCollider.gameObject.layer)) == 0)
             return false;
 
-        Portal target = (type == PortalGunController.PortalShotType.Blue) ? bluePortal : orangePortal;
+        Portal target = (type == PortalType.Blue) ? bluePortal : orangePortal;
         if (!target) return false;
 
-        // Resolver
-        if (!resolver.TryResolve(playerCamera, hitPoint, hitNormal, surfaceOffset, out Vector3 placePos, out Quaternion placeRot))
-            return false;
+        Quaternion rot = ComputeRotationFromSurface(hitNormal, playerCamera.transform);
 
-        // Validator
-        var req = new PortalPlacementValidator.Request
-        {
-            portal = target,
-            surfaceCollider = hitCollider,
-            placePosition = placePos,
-            placeRotation = placeRot,
-            placeableMask = placeableSurfaceMask,
-            overlapMask = overlapMask
-        };
-
-        if (!validator.CanPlace(req, out string reason))
-        {
-            Debug.Log($"[PortalSystem] Place denied: {reason}");
-            return false;
-        }
-
-        // í™•ì •
-        target.Reposition(placePos, placeRot);
-        target.SetPlaced(true);
+        target.Reposition(hitCollider, hitPoint, rot, surfaceOffset);
         return true;
+    }
+
+    private Quaternion ComputeRotationFromSurface(Vector3 surfaceNormal, Transform cam)
+    {
+        // ¡ÚÁß¿ä: Æ÷Å» "¾Õ¸é"ÀÌ ÇÃ·¹ÀÌ¾î¸¦ º¸°Ô ÇÏ·Á¸é forward = surfaceNormal
+        // ¾Ö¸ÅÇÏ¸é ¾Ö¸ÅÇÒ¼öµµÀÖ´Âµ¥, ³× Screen ¸Ş½¬°¡ µÚÁıÇô ÀÖÀ¸¸é -surfaceNormalÀÌ ¸ÂÀ» ¼öµµ ÀÖÀ½.
+        Vector3 forward = surfaceNormal.normalized;
+
+        // Ä«¸Ş¶ó ¿À¸¥ÂÊÀ» Ç¥¸é¿¡ Åõ¿µÇØ¼­ "Æ÷Å»ÀÇ ¿À¸¥ÂÊ"À¸·Î »ç¿ë
+        Vector3 right = Vector3.ProjectOnPlane(cam.right, forward);
+        if (right.sqrMagnitude < 1e-6f)
+            right = Vector3.ProjectOnPlane(cam.forward, forward);
+
+        right.Normalize();
+        Vector3 up = Vector3.Cross(forward, right).normalized;
+
+        // right¸¦ ´Ù½Ã Á¤±ÔÈ­(¼öÄ¡ ¿ÀÂ÷)
+        right = Vector3.Cross(up, forward).normalized;
+
+        return Quaternion.LookRotation(forward, up);
     }
 }

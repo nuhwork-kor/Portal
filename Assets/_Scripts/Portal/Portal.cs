@@ -1,83 +1,74 @@
-using System;
 using UnityEngine;
 
 public class Portal : MonoBehaviour
 {
     [Header("Link")]
-    [SerializeField] private Portal linkedPortal;
-    public Portal LinkedPortal => linkedPortal;
-    public bool IsLinked => linkedPortal != null;
+    [SerializeField] private Portal otherPortal;
+    public Portal OtherPortal => otherPortal;
 
-    [Header("Core")]
+    [Header("Refs")]
     [SerializeField] private Transform plane;
-    public Transform Plane => plane;
+    public Transform Plane => plane ? plane : transform;
 
-    [Header("Screen")]
-    [SerializeField] private PortalScreen screen;
-    public PortalScreen Screen => screen;
+    [SerializeField] private Renderer surfaceRenderer;        // ¡ÚÃß°¡: PortalSurfaceÀÇ MeshRenderer
+    public Renderer SurfaceRenderer => surfaceRenderer;
 
-    [Header("Placement State")]
-    [SerializeField] private bool isPlaced;
-    public bool IsPlaced => isPlaced;
+    [Header("Colliders")]
+    [SerializeField] private BoxCollider surfaceCollider;
+    public BoxCollider SurfaceCollider => surfaceCollider;
 
-    [Header("Placement Validation")]
-    [SerializeField] private Vector3 halfExtents = new Vector3(0.9f, 1.9f, 0.05f);
-    public Vector3 HalfExtents => halfExtents;
+    [SerializeField] private BoxCollider triggerCollider;
+    public BoxCollider TriggerCollider => triggerCollider;
 
-    [SerializeField] private Vector3 overlapBoxLocalCenter = new Vector3(0f, 0f, -0.05f);
-    public Vector3 OverlapBoxLocalCenter => overlapBoxLocalCenter;
-
-    public event Action Repositioned;
+    public bool IsPlaced { get; private set; }
+    public Collider WallColliderCached { get; private set; }
 
     private void Awake()
     {
         if (!plane)
         {
-            // í”„ë¦¬íŒ¹ì— "Plane" ìì‹ì´ ìˆìœ¼ë©´ ê·¸ê±¸ ì‚¬ìš©
-            var child = transform.Find("Plane");
-            plane = child ? child : transform;
+            var t = transform.Find("PortalPlane");
+            if (t) plane = t;
         }
 
-        if (!screen) screen = GetComponentInChildren<PortalScreen>(true);
-
-        isPlaced = false;
-        screen?.SetLinked(false);
-        screen?.SetRenderTexture(null);
+        if (!surfaceRenderer)
+        {
+            var t = transform.Find("PortalSurface");
+            if (t) surfaceRenderer = t.GetComponent<Renderer>();
+        }
     }
 
-
-    public void LinkTo(Portal other)
-    {
-        linkedPortal = other;
-        // ë§í¬ ìƒíƒœëŠ” PortalSystem/PortalRender ìª½ì—ì„œ â€œë‘˜ ë‹¤ ë°°ì¹˜ë¨â€ ì¡°ê±´ì„ í¬í•¨í•´ íŒë‹¨í•˜ëŠ” ê²Œ ì•ˆì „í•¨
-    }
-
-    public void ClearLink()
-    {
-        linkedPortal = null;
-        screen?.SetLinked(false);
-        screen?.SetRenderTexture(null);
-    }
+    public void LinkTo(Portal other) => otherPortal = other;
 
     public void SetPlaced(bool placed)
     {
-        isPlaced = placed;
-        if (!isPlaced)
-        {
-            screen?.SetLinked(false);
-            screen?.SetRenderTexture(null);
-        }
+        IsPlaced = placed;
+
+        if (surfaceCollider) surfaceCollider.enabled = placed;
+        if (triggerCollider) triggerCollider.enabled = placed;
+
+        // Æ÷Å» È­¸éÀº "»ó´ë Æ÷Å»ÀÌ ³õ¿´À» ¶§¸¸" ÄÑ´Â °Ô ÀÏ¹İÀûÀ¸·Î ¾ÈÀüÇÔ
+        if (surfaceRenderer)
+            surfaceRenderer.enabled = placed && otherPortal != null && otherPortal.IsPlaced;
+
+        if (!placed) WallColliderCached = null;
     }
 
-    /// <summary>PortalSystemì—ì„œ ë°°ì¹˜ í™•ì • ì‹œ í˜¸ì¶œ</summary>
-    public void Reposition(Vector3 worldPos, Quaternion worldRot)
+    public void Reposition(Collider wallCollider, Vector3 pos, Quaternion rot, float surfaceOffset)
     {
-        transform.SetPositionAndRotation(worldPos, worldRot);
+        WallColliderCached = wallCollider;
+        transform.SetPositionAndRotation(pos + (rot * Vector3.forward) * surfaceOffset, rot);
 
-        if (!gameObject.activeSelf)
-            gameObject.SetActive(true);
+        if (!gameObject.activeSelf) gameObject.SetActive(true);
 
-        isPlaced = true;
-        Repositioned?.Invoke();
+        // ¸ÕÀú placed ÄÑ°í, »ó´ë Æ÷Å» »óÅÂ¿¡ µû¶ó surface Ç¥½Ã ¿©ºÎ°¡ °áÁ¤µÊ
+        SetPlaced(true);
+    }
+
+    // PortalSystem¿¡¼­ ´Ù¸¥ Æ÷Å»À» ¹èÄ¡ÇßÀ» ¶§, È­¸é on/off¸¦ °»½ÅÇÒ ¿ëµµ
+    public void RefreshSurfaceVisibility()
+    {
+        if (surfaceRenderer)
+            surfaceRenderer.enabled = IsPlaced && otherPortal != null && otherPortal.IsPlaced;
     }
 }

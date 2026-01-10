@@ -28,8 +28,8 @@ public class InputManager : MonoBehaviour
         moveAction = playerInput.actions["Move"];
         lookAction = playerInput.actions["Look"];
         jumpAction = playerInput.actions["Jump"];
-        fireBlueAction = playerInput.actions["LeftFire"];
-        fireOrangeAction = playerInput.actions["RightFire"];
+        fireBlueAction = playerInput.actions["FireBlue"];
+        fireOrangeAction = playerInput.actions["FireOrange"];
     }
 
     private void OnEnable()
