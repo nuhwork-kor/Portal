@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1040286810826416470}
   - component: {fileID: 855458368070864968}
   - component: {fileID: 313674102027266723}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: PortalBullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -149,3 +149,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1541db0dd6906f84bbad21c6c54d9769, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  poolKey: PortalBullet
+  maxLifeSeconds: 3

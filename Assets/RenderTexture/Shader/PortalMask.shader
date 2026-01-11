@@ -18,7 +18,7 @@ Shader "Portals/PortalMask"
         Pass
         {
             Name "PortalMask"
-            Cull Off          // 초반 디버깅 편하게(방향 뒤집혀도 보이게). 나중에 Cull Back으로 바꿔도 됨.
+            Cull Back
             ZWrite On
             ZTest LEqual
 

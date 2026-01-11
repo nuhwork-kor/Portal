@@ -148,17 +148,25 @@ public class PortalRenderCamera : MonoBehaviour
     {
         Transform t = outPortal.Plane;
 
-        // ★핵심: normal이 "항상 portalCamera 쪽을 향하도록" 강제
+        // 네가 쓰던 normal 부호 로직은 그대로 둠
         Vector3 normal = t.forward;
         if (Vector3.Dot(normal, portalCamera.transform.position - t.position) > 0f)
             normal = -normal;
 
-        // offset도 카메라쪽으로 살짝 당겨서(z-fighting/경계 깜빡임 완화)
-        Vector3 pos = t.position + normal * offset;
+        // 카메라-평면 거리보다 offset이 커지면 평면이 카메라를 “넘어가서” 전부 클립 → 검정
+        // 그래서 offset을 거리 기반으로 clamp 한다. (오블리크는 절대 꺼지지 않음)
+        float camDist = Mathf.Abs(Vector3.Dot(normal, portalCamera.transform.position - t.position));
+        float near = portalCamera.nearClipPlane;
+
+        float maxSafeOffset = Mathf.Max(0f, camDist - near * 0.5f);
+        float safeOffset = Mathf.Min(offset, maxSafeOffset);
+
+        Vector3 pos = t.position + normal * safeOffset;
 
         Vector4 clipPlaneCameraSpace = CameraSpacePlane(portalCamera, pos, normal);
         portalCamera.projectionMatrix = portalCamera.CalculateObliqueMatrix(clipPlaneCameraSpace);
     }
+
 
     private static Vector4 CameraSpacePlane(Camera cam, Vector3 pos, Vector3 normal)
     {
