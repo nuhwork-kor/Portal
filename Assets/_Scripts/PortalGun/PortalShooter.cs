@@ -11,7 +11,7 @@ public class PortalShooter : MonoBehaviour
     [SerializeField] private string bulletPoolKey = "PortalBullet";
 
     [Header("Shoot")]
-    [SerializeField] private float shootSpeed = 35f;
+    [SerializeField] private float shootSpeed = 100f;
     [SerializeField] private float maxDistance = 120f;
 
     private void Awake()
