@@ -18,7 +18,7 @@ public class PortalTrigger : MonoBehaviour
         if (!portal) portal = GetComponentInParent<Portal>();
 
         triggerCol = GetComponent<Collider>();
-        triggerCol.isTrigger = true;
+        if (triggerCol) triggerCol.isTrigger = true;
     }
 
     private bool IsPortalReady()
@@ -34,15 +34,15 @@ public class PortalTrigger : MonoBehaviour
         if (!IsPortalReady()) return;
         if (other.isTrigger) return;
 
-        // øˆ«¡ ¥ÎªÛ
+        // ÏõåÌîÑ/Ï∂©Îèå Ignore Îã¥Îãπ
         var traveller = other.GetComponentInParent<PortalTraveller>();
         if (traveller != null)
         {
             traveller.EnterPortal(portal, portal.OtherPortal, portal.WallColliderCached);
         }
 
-        // ≈¨∑–(π›¬Î ∞…√∆¿ª ∂ß π›¥Î∆Ì «•Ω√)
-        var clone = other.GetComponentInParent<PortalObjectClone>();
+        // ÎπÑÏ£ºÏñº ÌÅ¥Î°† Îã¥Îãπ
+        var clone = other.GetComponentInParent<PortalCloneVisual>();
         if (clone != null)
         {
             clone.Begin(portal, portal.OtherPortal);
@@ -56,14 +56,13 @@ public class PortalTrigger : MonoBehaviour
         var traveller = other.GetComponentInParent<PortalTraveller>();
         if (traveller != null)
         {
-            // ∫Æ ignore «ÿ¡¶¥¬ traveller∞° æ»¿¸«“ ∂ß «œµµ∑œ
             traveller.NotifyTriggerExit(portal);
         }
 
-        var clone = other.GetComponentInParent<PortalObjectClone>();
+        var clone = other.GetComponentInParent<PortalCloneVisual>();
         if (clone != null)
         {
-            clone.End(portal);
+            clone.NotifyTriggerExit(portal);
         }
     }
 }
