@@ -15,8 +15,6 @@ public class ObjectPoolManager : MonoBehaviour
     }
 
     [SerializeField] List<Pool> pools;  //인스펙터에서 설정할 풀 목록
-
-
     Dictionary<string, Queue<GameObject>> poolDict;     //풀의 이름을 Key값으로 찾기 위함
 
     private void Awake()

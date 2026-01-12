@@ -39,7 +39,14 @@ public class PortalShooter : MonoBehaviour
     {
         if (!playerCamera || !portalSystem || ObjectPoolManager.Instance == null) return;
 
-        Vector3 origin = muzzle ? muzzle.position : (playerCamera.transform.position + playerCamera.transform.forward * 0.3f);
+        // 총구 이펙트는 "배치만" 하면 안 나옴. 클릭 때 Play를 강제로 해야 함.
+        if (PortalEffectManager.Instance != null)
+            PortalEffectManager.Instance.PlayMuzzle(type);
+
+        Vector3 origin = muzzle
+            ? muzzle.position
+            : (playerCamera.transform.position + playerCamera.transform.forward * 0.3f);
+
         Vector3 dir = playerCamera.transform.forward;
 
         GameObject obj = ObjectPoolManager.Instance.SpawnFromPool(
