@@ -5,8 +5,8 @@ using UnityEngine.Rendering.Universal;
 public class PortalRenderCamera : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private Camera playerCamera;   // º¸Åë ÀÌ ½ºÅ©¸³Æ®°¡ ºÙÀº Ä«¸Þ¶ó
-    [SerializeField] private Camera portalCamera;   // ·»´õ Àü¿ë Ä«¸Þ¶ó(Enabled ²¨µÑ °Í)
+    [SerializeField] private Camera playerCamera;   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½
+    [SerializeField] private Camera portalCamera;   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½(Enabled ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)
     [SerializeField] private Portal bluePortal;
     [SerializeField] private Portal orangePortal;
 
@@ -18,11 +18,11 @@ public class PortalRenderCamera : MonoBehaviour
     [SerializeField] private float clipPlaneOffset = 0.02f;
 
     [Header("PortalCamera Culling")]
-    [Tooltip("PortalCamera°¡ ·»´õÇÒ ·¹ÀÌ¾î. PortalSurface/PortalTrigger/Outline µîÀº Á¦¿Ü ÃßÃµ.")]
+    [Tooltip("PortalCameraï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½. PortalSurface/PortalTrigger/Outline ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ãµ.")]
     [SerializeField] private LayerMask portalCameraCullingMask = ~0;
 
     [Header("Optional tiny push (usually 0)")]
-    [Tooltip("¿Àºí¸®Å©°¡ Á¦´ë·Î¸é 0À¸·Î µÎ´Â°Ô Á¤¼®. (¶«»§¿ë)")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Î¸ï¿½ 0ï¿½ï¿½ï¿½ï¿½ ï¿½Î´Â°ï¿½ ï¿½ï¿½ï¿½ï¿½. (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)")]
     [SerializeField] private float outPortalCamPush = 0.0f;
 
     private RenderTexture blueRT;
@@ -71,22 +71,22 @@ public class PortalRenderCamera : MonoBehaviour
         if (!bluePortal || !orangePortal || !portalCamera) return;
         if (!bluePortal.IsPlaced || !orangePortal.IsPlaced) return;
 
-        // RT ¸®»çÀÌÁî
+        // RT ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (blueRT == null || blueRT.width != Screen.width || blueRT.height != Screen.height)
         {
             CreateOrResizeRTs(Screen.width, Screen.height);
             AssignRTsToSurfaces();
         }
 
-        // Portal Ç¥¸é Ç¥½Ã ¿©ºÎ °»½Å (³× Portal.cs¿¡ ÀÖ´Â ÇÔ¼ö ±âÁØ)
+        // Portal Ç¥ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ Portal.csï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½ï¿½)
         bluePortal.RefreshSurfaceVisibility();
         orangePortal.RefreshSurfaceVisibility();
 
-        // ÇÃ·¹ÀÌ¾î Ä«¸Þ¶ó ¼³Á¤ ÀÏºÎ µ¿±âÈ­ (FOV/Aspect ¾È ¸ÂÀ¸¸é ¾î»öÇØÁü)
+        // ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ïºï¿½ ï¿½ï¿½ï¿½ï¿½È­ (FOV/Aspect ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
         portalCamera.fieldOfView = playerCamera.fieldOfView;
         portalCamera.aspect = playerCamera.aspect;
         portalCamera.farClipPlane = playerCamera.farClipPlane;
-        portalCamera.nearClipPlane = Mathf.Max(0.01f, playerCamera.nearClipPlane); // oblique ¾²´õ¶óµµ ³Ê¹« Å©¸é ºÒ¸®
+        portalCamera.nearClipPlane = Mathf.Max(0.01f, playerCamera.nearClipPlane); // oblique ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¹ï¿½ Å©ï¿½ï¿½ ï¿½Ò¸ï¿½
 
         if (bluePortal.SurfaceRenderer && bluePortal.SurfaceRenderer.isVisible)
             RenderPortal(context, inPortal: bluePortal, outPortal: orangePortal, target: blueRT);
@@ -97,14 +97,14 @@ public class PortalRenderCamera : MonoBehaviour
 
     private void RenderPortal(ScriptableRenderContext context, Portal inPortal, Portal outPortal, RenderTexture target)
     {
-        // inPortal Ç¥¸éÀº ²ô°í ·»´õ(ÇÇµå¹é ·çÇÁ ¹æÁö)
+        // inPortal Ç¥ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½Çµï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         bool prevInSurface = inPortal.SurfaceRenderer && inPortal.SurfaceRenderer.enabled;
         if (inPortal.SurfaceRenderer) inPortal.SurfaceRenderer.enabled = false;
 
         portalCamera.targetTexture = target;
         request.destination = target;
 
-        // ±íÀº °ÍºÎÅÍ ·»´õ
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½Íºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         for (int i = iterations - 1; i >= 0; --i)
         {
             SetPortalCameraTransform(inPortal, outPortal, i);
@@ -148,13 +148,13 @@ public class PortalRenderCamera : MonoBehaviour
     {
         Transform t = outPortal.Plane;
 
-        // ³×°¡ ¾²´ø normal ºÎÈ£ ·ÎÁ÷Àº ±×´ë·Î µÒ
+        // ï¿½×°ï¿½ ï¿½ï¿½ï¿½ï¿½ normal ï¿½ï¿½È£ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×´ï¿½ï¿½ ï¿½ï¿½
         Vector3 normal = t.forward;
         if (Vector3.Dot(normal, portalCamera.transform.position - t.position) > 0f)
             normal = -normal;
 
-        // Ä«¸Þ¶ó-Æò¸é °Å¸®º¸´Ù offsetÀÌ Ä¿Áö¸é Æò¸éÀÌ Ä«¸Þ¶ó¸¦ ¡°³Ñ¾î°¡¼­¡± ÀüºÎ Å¬¸³ ¡æ °ËÁ¤
-        // ±×·¡¼­ offsetÀ» °Å¸® ±â¹ÝÀ¸·Î clamp ÇÑ´Ù. (¿Àºí¸®Å©´Â Àý´ë ²¨ÁöÁö ¾ÊÀ½)
+        // Ä«ï¿½Þ¶ï¿½-ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½ï¿½ï¿½ï¿½ï¿½ offsetï¿½ï¿½ Ä¿ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½Ñ¾î°¡ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ï¿½×·ï¿½ï¿½ï¿½ offsetï¿½ï¿½ ï¿½Å¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ clamp ï¿½Ñ´ï¿½. (ï¿½ï¿½ï¿½ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         float camDist = Mathf.Abs(Vector3.Dot(normal, portalCamera.transform.position - t.position));
         float near = portalCamera.nearClipPlane;
 

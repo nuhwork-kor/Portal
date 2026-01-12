@@ -27,6 +27,7 @@ public class PortalTraveller : MonoBehaviour
 
     private PlayerMovement movement;
     private PlayerMouseLook mouseLook;
+    private PortalCloneVisual cloneVisual;
 
     private void Awake()
     {
@@ -36,6 +37,8 @@ public class PortalTraveller : MonoBehaviour
 
         movement = GetComponent<PlayerMovement>();
         mouseLook = GetComponent<PlayerMouseLook>();
+
+        cloneVisual = GetComponent<PortalCloneVisual>();
     }
 
     private void FixedUpdate()
@@ -48,24 +51,22 @@ public class PortalTraveller : MonoBehaviour
             WarpNow();
     }
 
-    // Äğ´Ù¿î ÁßÀÌ¾îµµ "»óÅÂ/Ignore °»½Å"Àº ÇØ¾ß ÇÑ´Ù.
     public void EnterPortal(Portal inP, Portal outP, Collider inWall)
     {
+        if (Time.time < cooldownUntil) return;
         if (!inP || !outP) return;
 
-        // 1) "´Ù¸¥ Æ÷Å»"¿¡ µé¾î¿Â °Å¸é: ÀÌÀü »óÅÂ¸¦ °­Á¦·Î Á¤¸®ÇÏ°í »õ·Î ½ÃÀÛ
+        // ë‹¤ë¥¸ í¬íƒˆë¡œ ë“¤ì–´ì˜¨ ê²½ìš°: ê¸°ì¡´ ìƒíƒœë¥¼ ì •ë¦¬
         if (insideCount > 0 && inPortal != null && inPortal != inP)
         {
-            ForceClearState(); // ÀÌÀü wall ignore Ç®°í »óÅÂ ¸®¼Â
+            ForceClearState();
         }
 
-        // 2) Ã¹ ÁøÀÔ(¶Ç´Â °­Á¦ ¸®¼Â Á÷ÈÄ)ÀÌ¶ó¸é Á¤»ó ¼¼ÆÃ
         if (insideCount == 0)
         {
             inPortal = inP;
             outPortal = outP;
 
-            // wallCollider °»½Å
             SetIgnoredWall(inWall);
 
             float d = SignedDistanceToPlane(inPortal.Plane, GetCenterWorld());
@@ -73,14 +74,11 @@ public class PortalTraveller : MonoBehaviour
         }
         else
         {
-            // 3) °°Àº Æ÷Å»ÀÎµ¥ "º® Äİ¶óÀÌ´õ°¡ ¹Ù²ï °æ¿ì"(Æ÷Å» Àç¼³Ä¡/´Ù¸¥ Á¶°¢ º® µî)
-            //    -> ÀÌÀü ignore Ç®°í »õ º® ignore·Î ±³Ã¼
             if (inPortal == inP && inWall != null && inWall != wallCollider)
             {
                 SetIgnoredWall(inWall);
             }
 
-            // outPortalµµ ÃÖ½ÅÀ¸·Î ¸ÂÃçµÒ(Æ÷Å» Æä¾î°¡ ¹Ù²î´Â »óÈ² ´ëºñ)
             outPortal = outP;
         }
 
@@ -89,7 +87,6 @@ public class PortalTraveller : MonoBehaviour
 
     public void NotifyTriggerExit(Portal exitedPortal)
     {
-        // ´Ù¸¥ Æ÷Å» exit ÀÌº¥Æ®¸é ¹«½Ã(±âÁ¸ ·ÎÁ÷ À¯Áö)
         if (exitedPortal != null && inPortal != null && exitedPortal != inPortal)
             return;
 
@@ -103,7 +100,6 @@ public class PortalTraveller : MonoBehaviour
         insideCount = Mathf.Max(insideCount - 1, 0);
         if (insideCount > 0) return;
 
-        // ¿öÇÁ ¾øÀÌ ±×³É ºüÁ®³ª°£ °æ¿ì Á¤¸®
         ForceClearState();
     }
 
@@ -115,23 +111,20 @@ public class PortalTraveller : MonoBehaviour
 
         Warp();
 
-        // Ãâ±¸ÂÊ º® Äİ¶óÀÌ´õ(³× PortalÀÌ Ä³½ÃÇØµÎ´Â °ª »ç¿ë)
         Collider newWall = null;
         if (oldOutPortal != null)
             newWall = oldOutPortal.WallColliderCached;
 
-        // ¿ø·¡ µé¾î°¡´ø º® ignore ÇØÁ¦
         if (oldInWall) Physics.IgnoreCollision(col, oldInWall, false);
 
-        // »õ·Î ³ª¿Â ÂÊ º® ignore ¼³Á¤(Æ®¸®°Å ¿ÏÀüÈ÷ ³ª°¥ ¶§±îÁö À¯Áö)
-        if (newWall) Physics.IgnoreCollision(col, newWall, true);
+        wallCollider = null;
+        SetIgnoredWall(newWall);
 
         cooldownUntil = Time.time + teleportCooldown;
 
-        // Ãâ±¸ Æ÷Å» ±âÁØÀ¸·Î »óÅÂ ½º¿Ò À¯Áö
+        // í¬íƒˆìŒ ìŠ¤ì™‘ ìœ ì§€
         inPortal = oldOutPortal;
         outPortal = oldInPortal;
-        wallCollider = newWall;
 
         insideCount = Mathf.Max(insideCount, 1);
 
@@ -143,7 +136,12 @@ public class PortalTraveller : MonoBehaviour
         else
         {
             ForceClearState();
+            return;
         }
+
+        // âœ… ë¹„ì£¼ì–¼ í´ë¡ ë„ â€œí˜„ì¬ í¬íƒˆìŒâ€ìœ¼ë¡œ ê°±ì‹ 
+        if (cloneVisual != null)
+            cloneVisual.OnWarped(inPortal, outPortal);
     }
 
     private void ForceClearState()
@@ -174,8 +172,8 @@ public class PortalTraveller : MonoBehaviour
     private Vector3 GetCenterWorld()
     {
         if (capsule) return transform.TransformPoint(capsule.center);
-        if (rb) return rb.worldCenterOfMass;
         if (col) return col.bounds.center;
+        if (rb) return rb.worldCenterOfMass;
         return transform.position;
     }
 
