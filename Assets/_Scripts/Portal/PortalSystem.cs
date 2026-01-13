@@ -11,40 +11,40 @@ public class PortalSystem : MonoBehaviour
     [SerializeField] private Portal orangePortal;
 
     [Header("Placement Mask")]
-    [Tooltip("Æ÷Å»À» ºÙÀÏ ¼ö ÀÖ´Â ·¹ÀÌ¾î(Wall/Ground µî)")]
+    [Tooltip("ï¿½ï¿½Å»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½(Wall/Ground ï¿½ï¿½)")]
     [SerializeField] private LayerMask placeableMask;
 
-    [Tooltip("°ãÄ§ °Ë»ç¿¡ Æ÷ÇÔÇÒ ·¹ÀÌ¾î(º¸Åë placeableMask¿Í µ¿ÀÏ ÃßÃµ)")]
+    [Tooltip("ï¿½ï¿½Ä§ ï¿½Ë»ç¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½(ï¿½ï¿½ï¿½ï¿½ placeableMaskï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ãµ)")]
     [SerializeField] private LayerMask blockingMask;
 
     [Header("Placement Tuning")]
     [SerializeField] private float surfaceOffset = 0.002f;
 
     [Header("Fit / Slide On Surface")]
-    [Tooltip("Æ÷Å»ÀÌ ¸é ¹ÛÀ¸·Î ³ª°¡¸é, ¸é ¾ÈÂÊÀ¸·Î ÀÚµ¿À¸·Î '¹Ð¾î¼­' ¿ÂÀüÈ÷ µé¾î¿À°Ô ÇÔ")]
+    [Tooltip("ï¿½ï¿½Å»ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ 'ï¿½Ð¾î¼­' ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½")]
     [SerializeField] private bool autoSlideToFit = true;
 
-    [Tooltip("¸éÀÇ °æ°è¿¡¼­ ÀÌ¸¸Å­ ¶³¾îÁø °÷±îÁö¸¦ À¯È¿ ¿µ¿ªÀ¸·Î º½(Æ÷Å» Å×µÎ¸®/¿©À¯)")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½è¿¡ï¿½ï¿½ ï¿½Ì¸ï¿½Å­ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¿ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½(ï¿½ï¿½Å» ï¿½×µÎ¸ï¿½/ï¿½ï¿½ï¿½ï¿½)")]
     [SerializeField] private float fitPadding = 0.02f; // 2cm
 
     [Header("Optional Overlap Check")]
-    [Tooltip("ÁÖº¯ Áö¿À¸ÞÆ®¸®¿Í °ãÄ¡¸é ¼³Ä¡ ½ÇÆÐ Ã³¸®(ÄÚ³Ê/¿·º® Ä§¹ü ¹æÁö). ÇÊ¿ä ¾øÀ¸¸é ²ô±â.")]
+    [Tooltip("ï¿½Öºï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½(ï¿½Ú³ï¿½/ï¿½ï¿½ï¿½ï¿½ Ä§ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½). ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½.")]
     [SerializeField] private bool useOverlapCheck = true;
 
-    [Tooltip("Æ÷Å» Æò¸é ¹ý¼± ¹æÇâÀ¸·Î °ãÄ§ °Ë»ç µÎ²²(¹ÌÅÍ)")]
+    [Tooltip("ï¿½ï¿½Å» ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ ï¿½Ë»ï¿½ ï¿½Î²ï¿½(ï¿½ï¿½ï¿½ï¿½)")]
     [SerializeField] private float overlapCheckDepth = 0.15f;
 
-    [Tooltip("°ãÄ§ °Ë»ç¿¡¼­ Æ÷Å» °¡·Î/¼¼·Î¿¡ Ãß°¡·Î ´õÇÒ ¿©À¯(¹ÌÅÍ)")]
+    [Tooltip("ï¿½ï¿½Ä§ ï¿½Ë»ç¿¡ï¿½ï¿½ ï¿½ï¿½Å» ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ß°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)")]
     [SerializeField] private float overlapPadding = 0.01f;
 
     private void Awake()
     {
         if (!playerCamera) playerCamera = Camera.main;
 
-        // blockingMask ¹ÌÁöÁ¤ÀÌ¸é placeableMask·Î
+        // blockingMask ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ placeableMaskï¿½ï¿½
         if (blockingMask.value == 0) blockingMask = placeableMask;
 
-        // ¸µÅ© °íÁ¤
+        // ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½
         if (bluePortal && orangePortal)
         {
             bluePortal.LinkTo(orangePortal);
@@ -59,26 +59,29 @@ public class PortalSystem : MonoBehaviour
     {
         if (!playerCamera || !hitCollider) return false;
 
-        // ¹èÄ¡ °¡´É ·¹ÀÌ¾îÀÎÁö Ã¼Å©
+        // ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¼Å©
         if ((placeableMask.value & (1 << hitCollider.gameObject.layer)) == 0)
             return false;
 
         Portal target = (type == PortalType.Blue) ? bluePortal : orangePortal;
         if (!target) return false;
 
-        // È¸Àü °è»ê(³× ±âÁ¸ ¹æ½Ä À¯Áö)
+        // È¸ï¿½ï¿½ ï¿½ï¿½ï¿½(ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         Quaternion rot = ComputeRotationFromSurface(hitNormal, playerCamera.transform);
 
-        // ÇÙ½É: Æ÷Å»ÀÌ "¿ÂÀüÈ÷" µé¾î°¡µµ·Ï hitPoint¸¦ ¸é À§¿¡¼­ ½½¶óÀÌµå/º¸Á¤
+        // ï¿½Ù½ï¿½: ï¿½ï¿½Å»ï¿½ï¿½ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" ï¿½ï¿½î°¡ï¿½ï¿½ï¿½ï¿½ hitPointï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ìµï¿½/ï¿½ï¿½ï¿½ï¿½
         if (!TryGetFittedSurfacePoint(target, hitCollider, hitPoint, rot, out Vector3 fittedSurfacePoint))
             return false;
 
-        // ÃÖÁ¾ ¹èÄ¡
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
         target.Reposition(hitCollider, fittedSurfacePoint, rot, surfaceOffset);
 
-        // »ó´ë Æ÷Å» Ç¥¸é °»½Å(ÀÖÀ¸¸é)
+        // ï¿½ï¿½ï¿½ ï¿½ï¿½Å» Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
         target.RefreshSurfaceVisibility();
         if (target.OtherPortal) target.OtherPortal.RefreshSurfaceVisibility();
+
+        var openAnim = target.GetComponent<PortalSurfaceOpenAnimator>();
+        if (openAnim) openAnim.Play();
 
         return true;
     }
@@ -90,35 +93,35 @@ public class PortalSystem : MonoBehaviour
         if (!portal || !portal.SurfaceCollider)
             return false;
 
-        // Æ÷Å» °¡·Î/¼¼·Î ¹ÝÄ¡¼ö(¿ùµå ±âÁØ)
+        // ï¿½ï¿½Å» ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         GetPortalHalfSizeWorld(portal.SurfaceCollider, out float halfW, out float halfH);
 
-        // Æ÷Å» Æò¸é Ãà(¿ùµå)
+        // ï¿½ï¿½Å» ï¿½ï¿½ï¿½ ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)
         Vector3 axisR = portalRot * Vector3.right;
         Vector3 axisU = portalRot * Vector3.up;
         Vector3 axisN = portalRot * Vector3.forward;
 
-        // Ç¥¸é ÄÝ¶óÀÌ´õ¸¦ axisR/axisU·Î Åõ¿µÇßÀ» ¶§ÀÇ min/max ¹üÀ§
+        // Ç¥ï¿½ï¿½ ï¿½Ý¶ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ axisR/axisUï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ min/max ï¿½ï¿½ï¿½ï¿½
         if (!TryGetProjectionRange(surface, axisR, out float minR, out float maxR)) return false;
         if (!TryGetProjectionRange(surface, axisU, out float minU, out float maxU)) return false;
 
-        // À¯È¿ ¹üÀ§(Æ÷Å» ¹ÝÄ¡¼ö + ÆÐµù)
+        // ï¿½ï¿½È¿ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½Å» ï¿½ï¿½Ä¡ï¿½ï¿½ + ï¿½Ðµï¿½)
         float loR = minR + halfW + fitPadding;
         float hiR = maxR - halfW - fitPadding;
         float loU = minU + halfH + fitPadding;
         float hiU = maxU - halfH - fitPadding;
 
-        // ¾Æ¿¹ µé¾î°¥ °ø°£ÀÌ ¾øÀ¸¸é ¼³Ä¡ ºÒ°¡
+        // ï¿½Æ¿ï¿½ ï¿½ï¿½î°¥ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½Ò°ï¿½
         if (loR > hiR || loU > hiU)
             return false;
 
-        // ÇöÀç hitPointÀÇ Åõ¿µ°ª
+        // ï¿½ï¿½ï¿½ï¿½ hitPointï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         float sR = Vector3.Dot(axisR, hitPoint);
         float sU = Vector3.Dot(axisU, hitPoint);
 
         if (!autoSlideToFit)
         {
-            // ÀÚµ¿ º¸Á¤ ¾øÀÌ "¿ÏÀüÈ÷ µé¾î°¡¾ß¸¸" ¹èÄ¡ Çã¿ë
+            // ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½î°¡ï¿½ß¸ï¿½" ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½
             if (sR < loR || sR > hiR) return false;
             if (sU < loU || sU > hiU) return false;
 
@@ -126,7 +129,7 @@ public class PortalSystem : MonoBehaviour
         }
         else
         {
-            // ÀÚµ¿ º¸Á¤: ¹üÀ§ ¾ÈÀ¸·Î Å¬·¥ÇÁÇØ¼­ X/Z È¤Àº Y°¡ ÀÚµ¿À¸·Î ¹Ð¸²
+            // ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ X/Z È¤ï¿½ï¿½ Yï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ð¸ï¿½
             float cR = Mathf.Clamp(sR, loR, hiR);
             float cU = Mathf.Clamp(sU, loU, hiU);
 
@@ -134,10 +137,10 @@ public class PortalSystem : MonoBehaviour
             fittedPointOnSurface = shifted;
         }
 
-        // ¼±ÅÃ: ÁÖº¯ Áö¿À¸ÞÆ®¸® Ä§¹üÇÏ¸é ½ÇÆÐ Ã³¸®
+        // ï¿½ï¿½ï¿½ï¿½: ï¿½Öºï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ Ä§ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
         if (useOverlapCheck)
         {
-            Vector3 center = fittedPointOnSurface + axisN * surfaceOffset; // ½ÇÁ¦ Æ÷Å» Áß½É(º®¿¡¼­ »ìÂ¦ ¶ç¿ò)
+            Vector3 center = fittedPointOnSurface + axisN * surfaceOffset; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å» ï¿½ß½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Â¦ ï¿½ï¿½ï¿½)
             if (IsPlacementBlocked(portal, surface, center, portalRot, halfW, halfH))
                 return false;
         }
@@ -147,8 +150,8 @@ public class PortalSystem : MonoBehaviour
 
     private bool IsPlacementBlocked(Portal portal, Collider surface, Vector3 center, Quaternion rot, float halfW, float halfH)
     {
-        // Æò¸é¿¡ °ÅÀÇ ºÙ¾îÀÖ´Â ¾ãÀº ¹Ú½º·Î ÁÖº¯ Ä§¹ü °Ë»ç
-        // depth´Â ¹ý¼±¹æÇâ, °¡·Î/¼¼·Î´Â Æ÷Å» ¹ÝÄ¡¼ö + ¿©À¯
+        // ï¿½ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¾ï¿½ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½Öºï¿½ Ä§ï¿½ï¿½ ï¿½Ë»ï¿½
+        // depthï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Î´ï¿½ ï¿½ï¿½Å» ï¿½ï¿½Ä¡ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½
         Vector3 halfExtents = new Vector3(halfW + overlapPadding, halfH + overlapPadding, overlapCheckDepth * 0.5f);
 
         Collider[] hits = Physics.OverlapBox(
@@ -164,18 +167,18 @@ public class PortalSystem : MonoBehaviour
             Collider c = hits[i];
             if (!c) continue;
 
-            // ºÙÀÎ Ç¥¸é ÀÚ±â ÀÚ½ÅÀº ¹«½Ã
+            // ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             if (c == surface) continue;
 
-            // Æ÷Å» ÀÚ±â ÄÝ¶óÀÌ´õ ¹«½Ã(ÇÁ¸®ÆÕ ±¸Á¶ µû¶ó ÀÚ½Ä Æ÷ÇÔ)
+            // ï¿½ï¿½Å» ï¿½Ú±ï¿½ ï¿½Ý¶ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú½ï¿½ ï¿½ï¿½ï¿½ï¿½)
             if (portal.transform == c.transform || c.transform.IsChildOf(portal.transform))
                 continue;
 
-            // ¹Ý´ë Æ÷Å»µµ ¹«½Ã(°ãÄ§ °Ë»ç¿¡ ÀâÈ÷¸é ±ÍÂúÀ½)
+            // ï¿½Ý´ï¿½ ï¿½ï¿½Å»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½Ä§ ï¿½Ë»ç¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
             if (portal.OtherPortal && (portal.OtherPortal.transform == c.transform || c.transform.IsChildOf(portal.OtherPortal.transform)))
                 continue;
 
-            // ±× ¿Ü´Â Ä§¹üÀ¸·Î ÆÇ´Ü
+            // ï¿½ï¿½ ï¿½Ü´ï¿½ Ä§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ç´ï¿½
             return true;
         }
 
@@ -184,7 +187,7 @@ public class PortalSystem : MonoBehaviour
 
     private void GetPortalHalfSizeWorld(BoxCollider portalSurfaceCollider, out float halfW, out float halfH)
     {
-        // SurfaceColliderÀÇ local size¸¦ lossyScale·Î ¿ùµå Å©±â·Î º¯È¯
+        // SurfaceColliderï¿½ï¿½ local sizeï¿½ï¿½ lossyScaleï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½ï¿½ ï¿½ï¿½È¯
         Transform t = portalSurfaceCollider.transform;
         Vector3 lossy = t.lossyScale;
 
@@ -197,7 +200,7 @@ public class PortalSystem : MonoBehaviour
 
     private bool TryGetProjectionRange(Collider col, Vector3 axis, out float min, out float max)
     {
-        // axis´Â Á¤±ÔÈ­µÇ¾î ÀÖÀ» ÇÊ¿ä´Â ¾øÁö¸¸, ¼öÄ¡ ¾ÈÁ¤¼ºÀ» À§ÇØ normalize ±ÇÀå
+        // axisï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½È­ï¿½Ç¾ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ normalize ï¿½ï¿½ï¿½ï¿½
         float mag = axis.magnitude;
         if (mag < 1e-6f)
         {
@@ -206,7 +209,7 @@ public class PortalSystem : MonoBehaviour
         }
         Vector3 a = axis / mag;
 
-        // BoxCollider¸é OBB ÄÚ³Ê·Î ´õ Á¤È®ÇÏ°Ô
+        // BoxColliderï¿½ï¿½ OBB ï¿½Ú³Ê·ï¿½ ï¿½ï¿½ ï¿½ï¿½È®ï¿½Ï°ï¿½
         if (col is BoxCollider bc)
         {
             Vector3[] corners = GetBoxColliderWorldCorners(bc);
@@ -221,7 +224,7 @@ public class PortalSystem : MonoBehaviour
             return true;
         }
 
-        // ±× ¿Ü´Â bounds(AABB)·Î ´ëÃæ(Á¤¹Ðµµ ¶³¾îÁú ¼ö ÀÖÀ½)
+        // ï¿½ï¿½ ï¿½Ü´ï¿½ bounds(AABB)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½Ðµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         {
             Vector3[] corners = GetBoundsWorldCorners(col.bounds);
             min = float.PositiveInfinity;
