@@ -10,7 +10,7 @@ public class Portal : MonoBehaviour
     [SerializeField] private Transform plane;
     public Transform Plane => plane ? plane : transform;
 
-    [SerializeField] private Renderer surfaceRenderer;        // ¡ÚÃß°¡: PortalSurfaceÀÇ MeshRenderer
+    [SerializeField] private Renderer surfaceRenderer; // PortalSurfaceì˜ MeshRenderer
     public Renderer SurfaceRenderer => surfaceRenderer;
 
     [Header("Colliders")]
@@ -47,7 +47,7 @@ public class Portal : MonoBehaviour
         if (surfaceCollider) surfaceCollider.enabled = placed;
         if (triggerCollider) triggerCollider.enabled = placed;
 
-        // Æ÷Å» È­¸éÀº "»ó´ë Æ÷Å»ÀÌ ³õ¿´À» ¶§¸¸" ÄÑ´Â °Ô ÀÏ¹İÀûÀ¸·Î ¾ÈÀüÇÔ
+        // í¬íƒˆ í™”ë©´ì€ "ìƒëŒ€ í¬íƒˆë„ ì„¤ì¹˜ë˜ì–´ ìˆì„ ë•Œë§Œ" ë³´ì´ê²Œ
         if (surfaceRenderer)
             surfaceRenderer.enabled = placed && otherPortal != null && otherPortal.IsPlaced;
 
@@ -61,11 +61,11 @@ public class Portal : MonoBehaviour
 
         if (!gameObject.activeSelf) gameObject.SetActive(true);
 
-        // ¸ÕÀú placed ÄÑ°í, »ó´ë Æ÷Å» »óÅÂ¿¡ µû¶ó surface Ç¥½Ã ¿©ºÎ°¡ °áÁ¤µÊ
+        // placed ì²˜ë¦¬ + ìƒëŒ€ í¬íƒˆ ìƒíƒœì— ë”°ë¼ surface on/off
         SetPlaced(true);
     }
 
-    // PortalSystem¿¡¼­ ´Ù¸¥ Æ÷Å»À» ¹èÄ¡ÇßÀ» ¶§, È­¸é on/off¸¦ °»½ÅÇÒ ¿ëµµ
+    // PortalSystemì—ì„œ ë‹¤ë¥¸ í¬íƒˆ ë°°ì¹˜ í›„, í™”ë©´ on/off ê°±ì‹  ìš©ë„
     public void RefreshSurfaceVisibility()
     {
         if (surfaceRenderer)

@@ -252,7 +252,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 262998027}
-  - component: {fileID: 262998026}
+  - component: {fileID: 262998029}
+  - component: {fileID: 262998030}
+  - component: {fileID: 262998028}
   m_Layer: 10
   m_Name: PortalSurface
   m_TagString: Portal
@@ -260,7 +262,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!65 &262998026
+--- !u!4 &262998027
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 262998025}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 2, y: 4, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 792314584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &262998028
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -279,23 +296,61 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 2, y: 4, z: 0.02}
+  m_Size: {x: 1, y: 1.125, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &262998027
-Transform:
+--- !u!33 &262998029
+MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 262998025}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 792314584}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &262998030
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 262998025}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 98dbe0d1ee21ea44a8c6407fabee39c3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &277699761
 GameObject:
   m_ObjectHideFlags: 0
@@ -492,6 +547,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 399376299}
+  - component: {fileID: 399376301}
+  - component: {fileID: 399376302}
   - component: {fileID: 399376300}
   m_Layer: 10
   m_Name: PortalSurface
@@ -510,7 +567,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1663657812}
@@ -534,8 +591,61 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 2, y: 4, z: 0.02}
+  m_Size: {x: 1, y: 1.125, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &399376301
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 399376298}
+  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &399376302
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 399376298}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: ea90cda49b1ebed469957bfc1beeaebb, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &400348775
 GameObject:
   m_ObjectHideFlags: 0
@@ -1079,6 +1189,7 @@ GameObject:
   m_Component:
   - component: {fileID: 676926858}
   - component: {fileID: 676926859}
+  - component: {fileID: 676926860}
   m_Layer: 0
   m_Name: OrangePortal
   m_TagString: Untagged
@@ -1116,9 +1227,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   otherPortal: {fileID: 4092646585608918957}
   plane: {fileID: 1663657812}
-  surfaceRenderer: {fileID: 1663657814}
+  surfaceRenderer: {fileID: 399376302}
   surfaceCollider: {fileID: 399376300}
   triggerCollider: {fileID: 1179133426}
+  openProp: _Open
+  openDuration: 0.15
+--- !u!114 &676926860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676926857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b221a193906808c489a6a0499b8374e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  portalSurfaceRenderer: {fileID: 399376302}
+  portalOutlineRenderer: {fileID: 457484922}
+  duration: 0.2
+  surfaceOpenProp: _Open
+  surfaceEllipseProp: _Ellipse
+  surfaceOpenFrom: 0
+  surfaceOpenTo: 0.5
+  surfaceEllipse: {x: 1, y: 1}
+  outlineEllipseScaleProp: _EllipseScale
+  outlineScaleFrom: {x: 0.05, y: 0.05}
+  outlineScaleTo: {x: 0.97, y: 0.96}
 --- !u!1 &792314583
 GameObject:
   m_ObjectHideFlags: 0
@@ -1128,8 +1264,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 792314584}
-  - component: {fileID: 792314587}
-  - component: {fileID: 792314586}
   m_Layer: 0
   m_Name: PortalPlane
   m_TagString: Untagged
@@ -1156,59 +1290,6 @@ Transform:
   - {fileID: 894682568}
   m_Father: {fileID: 2249802206036052170}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &792314586
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 792314583}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 643c23c7cdd781147813bccebbc573e9, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &792314587
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 792314583}
-  m_Mesh: {fileID: -2124705421725058983, guid: 9743425fa5b5b0947ba47d02238c7c47, type: 3}
 --- !u!1 &874277018
 GameObject:
   m_ObjectHideFlags: 0
@@ -2246,8 +2327,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1663657812}
-  - component: {fileID: 1663657815}
-  - component: {fileID: 1663657814}
   m_Layer: 0
   m_Name: PortalPlane
   m_TagString: Untagged
@@ -2274,59 +2353,6 @@ Transform:
   - {fileID: 457484921}
   m_Father: {fileID: 676926858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &1663657814
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1663657811}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9a990629fb935494395c8987f31b1aa7, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1663657815
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1663657811}
-  m_Mesh: {fileID: -2124705421725058983, guid: 9743425fa5b5b0947ba47d02238c7c47, type: 3}
 --- !u!1 &1685027377
 GameObject:
   m_ObjectHideFlags: 0
@@ -12791,6 +12817,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2249802206036052170}
   - component: {fileID: 4092646585608918957}
+  - component: {fileID: 4092646585608918958}
   m_Layer: 0
   m_Name: BluePortal
   m_TagString: Untagged
@@ -12812,9 +12839,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   otherPortal: {fileID: 676926859}
   plane: {fileID: 792314584}
-  surfaceRenderer: {fileID: 792314586}
-  surfaceCollider: {fileID: 262998026}
+  surfaceRenderer: {fileID: 262998030}
+  surfaceCollider: {fileID: 262998028}
   triggerCollider: {fileID: 6512447136312835540}
+  openProp: _Open
+  openDuration: 0.15
+--- !u!114 &4092646585608918958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092646585608918954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b221a193906808c489a6a0499b8374e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  portalSurfaceRenderer: {fileID: 262998030}
+  portalOutlineRenderer: {fileID: 894682566}
+  duration: 0.2
+  surfaceOpenProp: _Open
+  surfaceEllipseProp: _Ellipse
+  surfaceOpenFrom: 0
+  surfaceOpenTo: 0.5
+  surfaceEllipse: {x: 1, y: 1}
+  outlineEllipseScaleProp: _EllipseScale
+  outlineScaleFrom: {x: 0.05, y: 0.05}
+  outlineScaleTo: {x: 0.97, y: 0.96}
 --- !u!4 &4148970713608253870
 Transform:
   m_ObjectHideFlags: 0
