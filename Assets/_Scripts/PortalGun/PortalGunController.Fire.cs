@@ -1,12 +1,7 @@
 using UnityEngine;
 
-public class PortalShooter : MonoBehaviour
+public partial class PortalGunController
 {
-    [Header("Refs")]
-    [SerializeField] private Camera playerCamera;
-    [SerializeField] private Transform muzzle;
-    [SerializeField] private PortalSystem portalSystem;
-
     [Header("Pooling")]
     [SerializeField] private string bulletPoolKey = "PortalBullet";
 
@@ -14,32 +9,34 @@ public class PortalShooter : MonoBehaviour
     [SerializeField] private float shootSpeed = 100f;
     [SerializeField] private float maxDistance = 120f;
 
-    private void Awake()
+    private void InitFire()
     {
-        if (!playerCamera) playerCamera = Camera.main;
-        if (!portalSystem) portalSystem = FindAnyObjectByType<PortalSystem>();
+        // nothing now
     }
 
-    private void OnEnable()
+    private void BindFireInput(bool bind)
     {
-        InputManager.OnFireBlue += FireBlue;
-        InputManager.OnFireOrange += FireOrange;
+        if (bind)
+        {
+            InputManager.OnFireBlue += FireBlue;
+            InputManager.OnFireOrange += FireOrange;
+        }
+        else
+        {
+            InputManager.OnFireBlue -= FireBlue;
+            InputManager.OnFireOrange -= FireOrange;
+        }
     }
 
-    private void OnDisable()
-    {
-        InputManager.OnFireBlue -= FireBlue;
-        InputManager.OnFireOrange -= FireOrange;
-    }
+    private void FireBlue() => FirePortal(PortalSystem.PortalType.Blue);
+    private void FireOrange() => FirePortal(PortalSystem.PortalType.Orange);
 
-    private void FireBlue() => Fire(PortalSystem.PortalType.Blue);
-    private void FireOrange() => Fire(PortalSystem.PortalType.Orange);
-
-    private void Fire(PortalSystem.PortalType type)
+    private void FirePortal(PortalSystem.PortalType type)
     {
         if (!playerCamera || !portalSystem || ObjectPoolManager.Instance == null) return;
+        if (IsHolding) return; // 들고 있으면 포탈 못 쏨
 
-        // 총구 이펙트는 "배치만" 하면 안 나옴. 클릭 때 Play를 강제로 해야 함.
+        // 총구 이펙트
         if (PortalEffectManager.Instance != null)
             PortalEffectManager.Instance.PlayMuzzle(type);
 

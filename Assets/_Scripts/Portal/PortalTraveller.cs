@@ -25,8 +25,9 @@ public class PortalTraveller : MonoBehaviour
 
     private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
-    private PlayerMovement movement;
-    private PlayerMouseLook mouseLook;
+   
+    private PlayerController playerController;
+
     private PortalCloneVisual cloneVisual;
 
     private void Awake()
@@ -35,8 +36,8 @@ public class PortalTraveller : MonoBehaviour
         col = GetComponent<Collider>();
         capsule = GetComponent<CapsuleCollider>();
 
-        movement = GetComponent<PlayerMovement>();
-        mouseLook = GetComponent<PlayerMouseLook>();
+        // Player일 때만 존재 (큐브/터렛은 null이어야 정상)
+        playerController = GetComponent<PlayerController>();
 
         cloneVisual = GetComponent<PortalCloneVisual>();
     }
@@ -139,7 +140,7 @@ public class PortalTraveller : MonoBehaviour
             return;
         }
 
-        // ✅ 비주얼 클론도 “현재 포탈쌍”으로 갱신
+        // 비주얼 클론도 “현재 포탈쌍”으로 갱신
         if (cloneVisual != null)
             cloneVisual.OnWarped(inPortal, outPortal);
     }
@@ -224,19 +225,26 @@ public class PortalTraveller : MonoBehaviour
         rb.position = newPos;
         transform.position = newPos;
 
+        // ✅ 회전(Yaw만 강제 세팅)
         Vector3 fwd = newWorldRot * Vector3.forward;
         fwd.y = 0f;
         if (fwd.sqrMagnitude > 1e-6f)
         {
             Quaternion yaw = Quaternion.LookRotation(fwd.normalized, Vector3.up);
 
-            if (mouseLook != null) mouseLook.ForceSetYaw(yaw);
-            else transform.rotation = yaw;
-
-            if (mouseLook != null) mouseLook.SyncPitchFromCamera();
+            if (playerController != null)
+            {
+                playerController.ForceSetYaw(yaw);
+                playerController.SyncPitchFromCamera();
+            }
+            else
+            {
+                transform.rotation = yaw;
+            }
         }
 
-        if (movement != null) movement.SetVelocity(newVel);
+        // 속도 세팅(플레이어면 PlayerController 쪽으로, 아니면 RB에 직접)
+        if (playerController != null) playerController.SetVelocity(newVel);
         else rb.linearVelocity = newVel;
     }
 }
