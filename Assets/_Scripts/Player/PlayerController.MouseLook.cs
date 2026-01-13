@@ -1,51 +1,44 @@
 using UnityEngine;
 
-public class PlayerMouseLook : MonoBehaviour
+public partial class PlayerController
 {
-    [Header("Refs")]
-    [SerializeField] Transform playerBody;          //yaw
-    [SerializeField] Transform cameraRoot;          //pitch
+    [Header("Look Settings")]
+    [SerializeField] private float mouseSensitivity = 0.15f;
+    [SerializeField] private float minPitch = -90f;
+    [SerializeField] private float maxPitch = 90f;
 
-    [Header("Settings")]
-    [SerializeField] float mouseSensitivity = 0.15f;
-    [SerializeField] float minPitch = -90f;
-    [SerializeField] float maxPitch = 90f;
+    private float pitch;
 
-    Vector2 lookInput;
-    float pitch;
-
-    private void Start()
+    private void InitLook()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // pitch ÃÊ±â°ª µ¿±âÈ­(¿¡µğÅÍ¿¡¼­ ½ÃÀÛ °¢µµ ÀÖÀ» ¼ö ÀÖÀ½)
+        if (cameraRoot)
+        {
+            pitch = cameraRoot.localEulerAngles.x;
+            if (pitch > 180f) pitch -= 360f;
+        }
     }
 
-    public void SetLookInput(Vector2 input)
-    {
-        lookInput = input;
-    }
-
-    private void Update()
+    private void TickLook(Vector2 look)
     {
         if (!playerBody || !cameraRoot) return;
 
-        float mouseX = lookInput.x * mouseSensitivity;
-        float mouseY = lookInput.y * mouseSensitivity;
+        float mouseX = look.x * mouseSensitivity;
+        float mouseY = look.y * mouseSensitivity;
 
-        //Yaw
+        // Yaw
         playerBody.Rotate(Vector3.up * mouseX, Space.World);
 
-        //Pitch
+        // Pitch
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-
         cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
-
-    /// <summary>
-    /// í…”ë ˆí¬íŠ¸ í›„ ì¹´ë©”ë¼ ê°ë„ íŠ ë°©ì§€ìš©
-    /// </summary>
+    // Æ÷Å» ÅÚ·¹Æ÷Æ® ÈÄ Ä«¸Ş¶ó Æ¦ ¹æÁö¿ë
     public void SyncPitchFromCamera()
     {
         if (!cameraRoot) return;
@@ -56,7 +49,6 @@ public class PlayerMouseLook : MonoBehaviour
     public void ForceSetYaw(Quaternion worldYawRot)
     {
         if (!playerBody || !cameraRoot) return;
-
         playerBody.rotation = worldYawRot;
         cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }

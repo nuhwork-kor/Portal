@@ -36,7 +36,7 @@
                 {
                     "name": "FireOrange",
                     "type": "Button",
-                    "id": "2e562e4a-3b9e-4409-b1bd-3a3a246b70c1",
+                    "id": "1674865d-b885-4302-9a9f-fb30d3df52c1",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -64,7 +64,7 @@
                     "name": "Jump",
                     "type": "Button",
                     "id": "f1ba0d36-48eb-4cd5-b651-1c94a6531f70",
-                    "expectedControlType": "",
+                    "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -293,7 +293,7 @@
                 },
                 {
                     "name": "",
-                    "id": "72eacbda-2878-4d87-82f6-58731f18b44c",
+                    "id": "3b919445-fccc-4829-b0b0-bf996249afa5",
                     "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
@@ -304,7 +304,7 @@
                 },
                 {
                     "name": "",
-                    "id": "35e1f3b9-4682-4780-bfca-b8f3bba97e4d",
+                    "id": "fb3fd807-171e-4dd4-b0c2-8be07b6087e2",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
@@ -315,7 +315,7 @@
                 },
                 {
                     "name": "",
-                    "id": "3bc34392-183c-4947-91eb-3053aa06425a",
+                    "id": "9261a0d4-8bb0-4a41-b94f-3b2313616fed",
                     "path": "<Touchscreen>/primaryTouch/tap",
                     "interactions": "",
                     "processors": "",
@@ -326,7 +326,7 @@
                 },
                 {
                     "name": "",
-                    "id": "8bc3e840-4af5-4ad0-ab8e-066139aaa7d2",
+                    "id": "d465348a-f615-428a-b8b4-9149fab6afeb",
                     "path": "<Joystick>/trigger",
                     "interactions": "",
                     "processors": "",
@@ -337,7 +337,7 @@
                 },
                 {
                     "name": "",
-                    "id": "1fd61678-86cb-48aa-acce-853541885f75",
+                    "id": "5dbd3a08-bf22-42e5-afa4-e73003756838",
                     "path": "<XRController>/{PrimaryAction}",
                     "interactions": "",
                     "processors": "",
@@ -415,7 +415,7 @@
                 {
                     "name": "",
                     "id": "36e52cba-0905-478e-a818-f4bfcb9f3b9a",
-                    "path": "<Keyboard>/ctrl",
+                    "path": "<Keyboard>/c",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
