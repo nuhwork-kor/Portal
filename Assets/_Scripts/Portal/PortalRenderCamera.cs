@@ -5,8 +5,8 @@ using UnityEngine.Rendering.Universal;
 public class PortalRenderCamera : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private Camera playerCamera;   // ���� �� ��ũ��Ʈ�� ���� ī�޶�
-    [SerializeField] private Camera portalCamera;   // ���� ���� ī�޶�(Enabled ���� ��)
+    [SerializeField] private Camera playerCamera;
+    [SerializeField] private Camera portalCamera;
     [SerializeField] private Portal bluePortal;
     [SerializeField] private Portal orangePortal;
 
@@ -18,19 +18,15 @@ public class PortalRenderCamera : MonoBehaviour
     [SerializeField] private float clipPlaneOffset = 0.02f;
 
     [Header("PortalCamera Culling")]
-    [Tooltip("PortalCamera�� ������ ���̾�. PortalSurface/PortalTrigger/Outline ���� ���� ��õ.")]
     [SerializeField] private LayerMask portalCameraCullingMask = ~0;
 
     [Header("Optional tiny push (usually 0)")]
-    [Tooltip("�����ũ�� ����θ� 0���� �δ°� ����. (������)")]
     [SerializeField] private float outPortalCamPush = 0.0f;
 
     private RenderTexture blueRT;
     private RenderTexture orangeRT;
 
     private UniversalRenderPipeline.SingleCameraRequest request;
-
-    private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
     private void Awake()
     {
@@ -71,22 +67,19 @@ public class PortalRenderCamera : MonoBehaviour
         if (!bluePortal || !orangePortal || !portalCamera) return;
         if (!bluePortal.IsPlaced || !orangePortal.IsPlaced) return;
 
-        // RT ��������
         if (blueRT == null || blueRT.width != Screen.width || blueRT.height != Screen.height)
         {
             CreateOrResizeRTs(Screen.width, Screen.height);
             AssignRTsToSurfaces();
         }
 
-        // Portal ǥ�� ǥ�� ���� ���� (�� Portal.cs�� �ִ� �Լ� ����)
         bluePortal.RefreshSurfaceVisibility();
         orangePortal.RefreshSurfaceVisibility();
 
-        // �÷��̾� ī�޶� ���� �Ϻ� ����ȭ (FOV/Aspect �� ������ �������)
         portalCamera.fieldOfView = playerCamera.fieldOfView;
         portalCamera.aspect = playerCamera.aspect;
         portalCamera.farClipPlane = playerCamera.farClipPlane;
-        portalCamera.nearClipPlane = Mathf.Max(0.01f, playerCamera.nearClipPlane); // oblique ������ �ʹ� ũ�� �Ҹ�
+        portalCamera.nearClipPlane = Mathf.Max(0.01f, playerCamera.nearClipPlane);
 
         if (bluePortal.SurfaceRenderer && bluePortal.SurfaceRenderer.isVisible)
             RenderPortal(context, inPortal: bluePortal, outPortal: orangePortal, target: blueRT);
@@ -97,14 +90,12 @@ public class PortalRenderCamera : MonoBehaviour
 
     private void RenderPortal(ScriptableRenderContext context, Portal inPortal, Portal outPortal, RenderTexture target)
     {
-        // inPortal ǥ���� ��� ����(�ǵ�� ���� ����)
         bool prevInSurface = inPortal.SurfaceRenderer && inPortal.SurfaceRenderer.enabled;
         if (inPortal.SurfaceRenderer) inPortal.SurfaceRenderer.enabled = false;
 
         portalCamera.targetTexture = target;
         request.destination = target;
 
-        // ���� �ͺ��� ����
         for (int i = iterations - 1; i >= 0; --i)
         {
             SetPortalCameraTransform(inPortal, outPortal, i);
@@ -131,13 +122,8 @@ public class PortalRenderCamera : MonoBehaviour
 
         for (int i = 0; i <= iteration; ++i)
         {
-            Vector3 relativePos = inT.InverseTransformPoint(camT.position);
-            relativePos = HalfTurn * relativePos;
-            camT.position = outT.TransformPoint(relativePos);
-
-            Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * camT.rotation;
-            relativeRot = HalfTurn * relativeRot;
-            camT.rotation = outT.rotation * relativeRot;
+            camT.position = PortalMath.TransformPoint(camT.position, inT, outT);
+            camT.rotation = PortalMath.TransformRotation(camT.rotation, inT, outT);
         }
 
         if (outPortalCamPush != 0f)
@@ -148,13 +134,10 @@ public class PortalRenderCamera : MonoBehaviour
     {
         Transform t = outPortal.Plane;
 
-        // �װ� ���� normal ��ȣ ������ �״�� ��
         Vector3 normal = t.forward;
         if (Vector3.Dot(normal, portalCamera.transform.position - t.position) > 0f)
             normal = -normal;
 
-        // ī�޶�-��� �Ÿ����� offset�� Ŀ���� ����� ī�޶� ���Ѿ���� ���� Ŭ�� �� ����
-        // �׷��� offset�� �Ÿ� ������� clamp �Ѵ�. (�����ũ�� ���� ������ ����)
         float camDist = Mathf.Abs(Vector3.Dot(normal, portalCamera.transform.position - t.position));
         float near = portalCamera.nearClipPlane;
 
@@ -166,7 +149,6 @@ public class PortalRenderCamera : MonoBehaviour
         Vector4 clipPlaneCameraSpace = CameraSpacePlane(portalCamera, pos, normal);
         portalCamera.projectionMatrix = portalCamera.CalculateObliqueMatrix(clipPlaneCameraSpace);
     }
-
 
     private static Vector4 CameraSpacePlane(Camera cam, Vector3 pos, Vector3 normal)
     {
