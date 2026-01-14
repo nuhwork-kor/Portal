@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -17,7 +18,13 @@ public class PortalTraveller : MonoBehaviour
 
     private Portal inPortal;
     private Portal outPortal;
+
+    // ✅ 벽(포탈 설치된 실제 표면) 콜라이더
     private Collider wallCollider;
+
+    // ✅ 추가: 포탈 “면” 콜라이더(PortalSurface) 충돌도 무시해야 ‘턱’이 사라짐
+    private Collider inSurfaceCol;
+    private Collider outSurfaceCol;
 
     private int insideCount = 0;
     private int entrySideSign = +1;
@@ -25,10 +32,10 @@ public class PortalTraveller : MonoBehaviour
 
     private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
-   
     private PlayerController playerController;
-
     private PortalCloneVisual cloneVisual;
+
+    public event Action<Portal, Portal> Warped;
 
     private void Awake()
     {
@@ -36,9 +43,7 @@ public class PortalTraveller : MonoBehaviour
         col = GetComponent<Collider>();
         capsule = GetComponent<CapsuleCollider>();
 
-        // Player일 때만 존재 (큐브/터렛은 null이어야 정상)
         playerController = GetComponent<PlayerController>();
-
         cloneVisual = GetComponent<PortalCloneVisual>();
     }
 
@@ -57,7 +62,6 @@ public class PortalTraveller : MonoBehaviour
         if (Time.time < cooldownUntil) return;
         if (!inP || !outP) return;
 
-        // 다른 포탈로 들어온 경우: 기존 상태를 정리
         if (insideCount > 0 && inPortal != null && inPortal != inP)
         {
             ForceClearState();
@@ -69,6 +73,7 @@ public class PortalTraveller : MonoBehaviour
             outPortal = outP;
 
             SetIgnoredWall(inWall);
+            SetIgnoredPortalSurfaces(inPortal, outPortal);
 
             float d = SignedDistanceToPlane(inPortal.Plane, GetCenterWorld());
             entrySideSign = SignWithEps(d, +1);
@@ -76,11 +81,12 @@ public class PortalTraveller : MonoBehaviour
         else
         {
             if (inPortal == inP && inWall != null && inWall != wallCollider)
-            {
                 SetIgnoredWall(inWall);
-            }
 
             outPortal = outP;
+
+            // ✅ outPortal이 갱신될 수 있으니 surface ignore도 갱신
+            SetIgnoredPortalSurfaces(inPortal, outPortal);
         }
 
         insideCount++;
@@ -112,6 +118,8 @@ public class PortalTraveller : MonoBehaviour
 
         Warp();
 
+        Warped?.Invoke(oldInPortal, oldOutPortal);
+
         Collider newWall = null;
         if (oldOutPortal != null)
             newWall = oldOutPortal.WallColliderCached;
@@ -127,6 +135,9 @@ public class PortalTraveller : MonoBehaviour
         inPortal = oldOutPortal;
         outPortal = oldInPortal;
 
+        // ✅ 스왑 이후에도 surface ignore 갱신
+        SetIgnoredPortalSurfaces(inPortal, outPortal);
+
         insideCount = Mathf.Max(insideCount, 1);
 
         if (inPortal != null)
@@ -140,7 +151,6 @@ public class PortalTraveller : MonoBehaviour
             return;
         }
 
-        // 비주얼 클론도 “현재 포탈쌍”으로 갱신
         if (cloneVisual != null)
             cloneVisual.OnWarped(inPortal, outPortal);
     }
@@ -149,6 +159,12 @@ public class PortalTraveller : MonoBehaviour
     {
         if (wallCollider)
             Physics.IgnoreCollision(col, wallCollider, false);
+
+        // ✅ surface ignore 복구
+        if (inSurfaceCol) Physics.IgnoreCollision(col, inSurfaceCol, false);
+        if (outSurfaceCol) Physics.IgnoreCollision(col, outSurfaceCol, false);
+        inSurfaceCol = null;
+        outSurfaceCol = null;
 
         inPortal = null;
         outPortal = null;
@@ -168,6 +184,26 @@ public class PortalTraveller : MonoBehaviour
 
         if (wallCollider)
             Physics.IgnoreCollision(col, wallCollider, true);
+    }
+
+    private void SetIgnoredPortalSurfaces(Portal inP, Portal outP)
+    {
+        Collider newIn = (inP != null) ? inP.SurfaceCollider : null;
+        Collider newOut = (outP != null) ? outP.SurfaceCollider : null;
+
+        if (inSurfaceCol != newIn)
+        {
+            if (inSurfaceCol) Physics.IgnoreCollision(col, inSurfaceCol, false);
+            inSurfaceCol = newIn;
+            if (inSurfaceCol) Physics.IgnoreCollision(col, inSurfaceCol, true);
+        }
+
+        if (outSurfaceCol != newOut)
+        {
+            if (outSurfaceCol) Physics.IgnoreCollision(col, outSurfaceCol, false);
+            outSurfaceCol = newOut;
+            if (outSurfaceCol) Physics.IgnoreCollision(col, outSurfaceCol, true);
+        }
     }
 
     private Vector3 GetCenterWorld()
@@ -214,10 +250,6 @@ public class PortalTraveller : MonoBehaviour
 
         Vector3 newPos = newCenter - pivotToCenter;
 
-        Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * transform.rotation;
-        relativeRot = HalfTurn * relativeRot;
-        Quaternion newWorldRot = outT.rotation * relativeRot;
-
         Vector3 relativeVel = inT.InverseTransformDirection(rb.linearVelocity);
         relativeVel = HalfTurn * relativeVel;
         Vector3 newVel = outT.TransformDirection(relativeVel);
@@ -225,26 +257,36 @@ public class PortalTraveller : MonoBehaviour
         rb.position = newPos;
         transform.position = newPos;
 
-        // ✅ 회전(Yaw만 강제 세팅)
-        Vector3 fwd = newWorldRot * Vector3.forward;
-        fwd.y = 0f;
-        if (fwd.sqrMagnitude > 1e-6f)
+        if (playerController != null)
         {
-            Quaternion yaw = Quaternion.LookRotation(fwd.normalized, Vector3.up);
+            // ===== 플레이어: 시점 보정 =====
+            Quaternion viewBefore = playerController.GetViewWorldRotation();
 
-            if (playerController != null)
-            {
-                playerController.ForceSetYaw(yaw);
-                playerController.SyncPitchFromCamera();
-            }
-            else
-            {
-                transform.rotation = yaw;
-            }
+            Quaternion viewLocal = Quaternion.Inverse(inT.rotation) * viewBefore;
+            viewLocal = HalfTurn * viewLocal;
+            Quaternion viewAfter = outT.rotation * viewLocal;
+
+            // ✅ 핵심: “yaw 특이점” fallback도 포탈 변환해서 넘겨야 시점이 안튐
+            Vector3 stableYawBefore = playerController.GetStableYawForward();
+            Vector3 stableYawAfter = PortalMath.TransformDirection(stableYawBefore, inT, outT);
+
+            playerController.ForceSetViewUpright(viewAfter, stableYawAfter);
+
+            playerController.SetVelocity(newVel);
         }
+        else
+        {
+            // ===== 일반 오브젝트 =====
+            Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * transform.rotation;
+            relativeRot = HalfTurn * relativeRot;
+            Quaternion newWorldRot = outT.rotation * relativeRot;
+            transform.rotation = newWorldRot;
 
-        // 속도 세팅(플레이어면 PlayerController 쪽으로, 아니면 RB에 직접)
-        if (playerController != null) playerController.SetVelocity(newVel);
-        else rb.linearVelocity = newVel;
+            Vector3 relAng = inT.InverseTransformDirection(rb.angularVelocity);
+            relAng = HalfTurn * relAng;
+            rb.angularVelocity = outT.TransformDirection(relAng);
+
+            rb.linearVelocity = newVel;
+        }
     }
 }

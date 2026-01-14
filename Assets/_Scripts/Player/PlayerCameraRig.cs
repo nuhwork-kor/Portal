@@ -7,17 +7,17 @@ public class PlayerCameraRig : MonoBehaviour
     [SerializeField] private CapsuleCollider capsule;  // optional auto calc
 
     [Header("Eye Height")]
-    [Tooltip("Capsule ±âÁØ ÀÚµ¿ °è»êÀ» ¾µÁö ¿©ºÎ")]
+    [Tooltip("Capsule ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField] private bool autoFromCapsule = true;
 
-    [Tooltip("Capsule bottom~top »çÀÌ¿¡¼­ ´«ÀÌ À§Ä¡ÇÒ ºñÀ² (Height=2, Center=0 ±âÁØ 0.8ÀÌ¸é localY=0.6Âë)")]
+    [Tooltip("Capsule bottom~top ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (Height=2, Center=0 ï¿½ï¿½ï¿½ï¿½ 0.8ï¿½Ì¸ï¿½ localY=0.6ï¿½ï¿½)")]
     [Range(0.5f, 0.95f)]
     [SerializeField] private float eyeHeightRatio = 0.8f;
 
-    [Tooltip("¼öµ¿ ´«³ôÀÌ(local Y). autoFromCapsule=falseÀÏ ¶§ »ç¿ë")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(local Y). autoFromCapsule=falseï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½")]
     [SerializeField] private float eyeLocalY = 0.6f;
 
-    [Tooltip("ÇÊ¿äÇÏ¸é ¾Õ/µÚ º¸Á¤(¿¹: -0.05)")]
+    [Tooltip("ï¿½Ê¿ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½/ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½: -0.05)")]
     [SerializeField] private Vector3 localOffset = Vector3.zero;
 
     private void Reset()
@@ -34,7 +34,7 @@ public class PlayerCameraRig : MonoBehaviour
         Apply();
     }
 
-    // ¾Ö´Ï¸ÞÀÌ¼Ç/IK °°Àº °Å ºÙÀ¸¸é LateUpdate°¡ ´õ ¾ÈÀüÇÔ
+    // ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½/IK ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ LateUpdateï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void LateUpdate()
     {
         Apply();
@@ -48,7 +48,7 @@ public class PlayerCameraRig : MonoBehaviour
 
         if (autoFromCapsule && capsule)
         {
-            // Capsule local ±âÁØ bottom/top °è»ê
+            // Capsule local ï¿½ï¿½ï¿½ï¿½ bottom/top ï¿½ï¿½ï¿½
             float bottom = capsule.center.y - (capsule.height * 0.5f);
             float top = capsule.center.y + (capsule.height * 0.5f);
             y = Mathf.Lerp(bottom, top, eyeHeightRatio);
@@ -61,7 +61,7 @@ public class PlayerCameraRig : MonoBehaviour
         cameraRoot.localPosition = p;
     }
 
-    // ¸ðµ¨ ¹Ù²î¸é ¿©±â·Î ¼¼ÆÃ °¡´É
+    // ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void SetEyeLocalY(float newEyeLocalY)
     {
         autoFromCapsule = false;

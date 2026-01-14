@@ -17,10 +17,10 @@ TagManager:
   - Portal
   - PortalTrigger
   - PortalSurface
-  - Cube
-  - 
-  - PortalBullet
+  - Interactable
   - PortalGun
+  - PortalBullet
+  - 
   - 
   - 
   - 

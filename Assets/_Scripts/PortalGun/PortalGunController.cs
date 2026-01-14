@@ -1,44 +1,66 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public partial class PortalGunController : MonoBehaviour
+public class PortalGunController : MonoBehaviour
 {
     [Header("Shared Refs")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Rigidbody playerRigidbody;
 
-    [Tooltip("Áı¾úÀ» ¶§ ¿ÀºêÁ§Æ®°¡ °íÁ¤µÉ À§Ä¡(ºó ¿ÀºêÁ§Æ®).")]
+    [Tooltip("ë“¤ê³  ìˆëŠ” ì˜¤ë¸Œì íŠ¸ë¥¼ ëŒì–´ì˜¬ ëª©í‘œ ìœ„ì¹˜(í”Œë ˆì´ì–´ ì•).")]
     [SerializeField] private Transform holdPoint;
 
     [Header("Fire Refs")]
     [SerializeField] private Transform muzzle;
     [SerializeField] private PortalSystem portalSystem;
 
+    [Header("Portal Refs (ê¶Œì¥: ì¸ìŠ¤í™í„° í• ë‹¹)")]
+    [SerializeField] private Portal bluePortal;
+    [SerializeField] private Portal orangePortal;
+
     public Camera PlayerCamera => playerCamera;
     public Rigidbody PlayerRigidbody => playerRigidbody;
     public Transform HoldPoint => holdPoint;
 
-    public bool IsHolding => heldRb != null;
+    public Transform Muzzle => muzzle;
+    public PortalSystem PortalSystem => portalSystem;
+
+    public Portal BluePortal => bluePortal;
+    public Portal OrangePortal => orangePortal;
 
     private void Awake()
     {
+        ResolveRefs();
+    }
+
+    private void ResolveRefs()
+    {
         if (!playerCamera) playerCamera = Camera.main;
-        if (!playerRigidbody) playerRigidbody = GetComponentInParent<Rigidbody>();
+
+        if (!playerRigidbody)
+        {
+            playerRigidbody = GetComponentInParent<Rigidbody>();
+            if (!playerRigidbody) playerRigidbody = GetComponent<Rigidbody>();
+        }
+
         if (!portalSystem) portalSystem = FindAnyObjectByType<PortalSystem>();
 
-        InitFire();
-        InitInteraction();
-    }
+        // í¬íƒˆ ìë™íƒìƒ‰(ì¸ìŠ¤í™í„° í• ë‹¹ì´ ìµœìš°ì„ )
+        if (!bluePortal || !orangePortal)
+        {
+            var portals = Object.FindObjectsByType<Portal>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
 
-    private void OnEnable()
-    {
-        BindFireInput(true);
-        BindInteractionInput(true);
-    }
+            foreach (var p in portals)
+            {
+                if (!p) continue;
 
-    private void OnDisable()
-    {
-        BindFireInput(false);
-        BindInteractionInput(false);
+                string n = p.name.ToLowerInvariant();
+                if (!bluePortal && n.Contains("blue")) bluePortal = p;
+                else if (!orangePortal && n.Contains("orange")) orangePortal = p;
+            }
+        }
     }
 }

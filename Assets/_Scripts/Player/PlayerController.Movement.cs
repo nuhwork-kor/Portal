@@ -106,7 +106,7 @@ public partial class PlayerController
 
         Transform t = capsule.transform;
 
-        // ¿ùµå center
+        // ï¿½ï¿½ï¿½ï¿½ center
         Vector3 center = t.TransformPoint(capsule.center);
 
         float scaleXZ = Mathf.Max(Mathf.Abs(t.lossyScale.x), Mathf.Abs(t.lossyScale.z));
@@ -129,7 +129,7 @@ public partial class PlayerController
         );
     }
 
-    // Æ÷Å» ÅÚ·¹Æ÷Æ® ÈÄ ¼Óµµ ¼¼ÆÃ¿ë
+    // ï¿½ï¿½Å» ï¿½Ú·ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ ï¿½Óµï¿½ ï¿½ï¿½ï¿½Ã¿ï¿½
     public void SetVelocity(Vector3 newVel)
     {
         rb.linearVelocity = newVel;
