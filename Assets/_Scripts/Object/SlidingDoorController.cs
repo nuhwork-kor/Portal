@@ -11,7 +11,7 @@ public class SlidingDoor : MonoBehaviour
 
     [Header("Motion")]
     [Tooltip("열릴 때 각 패널이 local 기준으로 이동할 거리(양수)")]
-    [SerializeField] private float slideDistance = 1.2f;
+    [SerializeField] private float slideDistance = 2.6f;
 
     [Tooltip("열리고 닫히는 시간(초)")]
     [SerializeField] private float moveDuration = 0.6f;
