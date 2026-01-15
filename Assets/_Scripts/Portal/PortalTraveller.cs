@@ -19,10 +19,10 @@ public class PortalTraveller : MonoBehaviour
     private Portal inPortal;
     private Portal outPortal;
 
-    // ✅ 벽(포탈 설치된 실제 표면) 콜라이더
+    // 벽(포탈 설치된 실제 표면) 콜라이더
     private Collider wallCollider;
 
-    // ✅ 추가: 포탈 “면” 콜라이더(PortalSurface) 충돌도 무시해야 ‘턱’이 사라짐
+    // 포탈 “면” 콜라이더(PortalSurface) 충돌도 무시
     private Collider inSurfaceCol;
     private Collider outSurfaceCol;
 
@@ -85,7 +85,7 @@ public class PortalTraveller : MonoBehaviour
 
             outPortal = outP;
 
-            // ✅ outPortal이 갱신될 수 있으니 surface ignore도 갱신
+            // outPortal 갱신될 수 있으니 surface ignore도 갱신
             SetIgnoredPortalSurfaces(inPortal, outPortal);
         }
 
@@ -135,7 +135,7 @@ public class PortalTraveller : MonoBehaviour
         inPortal = oldOutPortal;
         outPortal = oldInPortal;
 
-        // ✅ 스왑 이후에도 surface ignore 갱신
+        // 스왑 이후에도 surface ignore 갱신
         SetIgnoredPortalSurfaces(inPortal, outPortal);
 
         insideCount = Mathf.Max(insideCount, 1);
@@ -160,7 +160,6 @@ public class PortalTraveller : MonoBehaviour
         if (wallCollider)
             Physics.IgnoreCollision(col, wallCollider, false);
 
-        // ✅ surface ignore 복구
         if (inSurfaceCol) Physics.IgnoreCollision(col, inSurfaceCol, false);
         if (outSurfaceCol) Physics.IgnoreCollision(col, outSurfaceCol, false);
         inSurfaceCol = null;
@@ -238,6 +237,17 @@ public class PortalTraveller : MonoBehaviour
         Transform inT = inPortal.Plane;
         Transform outT = outPortal.Plane;
 
+        // ✅ (플레이어면) 워프 전 시야를 먼저 읽어둔다
+        Quaternion viewBefore = Quaternion.identity;
+        Vector3 stableYawBefore = Vector3.forward;
+
+        if (playerController != null)
+        {
+            viewBefore = playerController.GetViewWorldRotation();
+            stableYawBefore = playerController.GetStableYawForward();
+        }
+
+        // ===== 위치 변환 =====
         Vector3 center = GetCenterWorld();
         Vector3 pivotToCenter = center - transform.position;
 
@@ -250,6 +260,7 @@ public class PortalTraveller : MonoBehaviour
 
         Vector3 newPos = newCenter - pivotToCenter;
 
+        // ===== 속도 변환 =====
         Vector3 relativeVel = inT.InverseTransformDirection(rb.linearVelocity);
         relativeVel = HalfTurn * relativeVel;
         Vector3 newVel = outT.TransformDirection(relativeVel);
@@ -259,24 +270,29 @@ public class PortalTraveller : MonoBehaviour
 
         if (playerController != null)
         {
-            // ===== 플레이어: 시점 보정 =====
-            Quaternion viewBefore = playerController.GetViewWorldRotation();
+            // ===== Portal1처럼 시야 "딸려가기" =====
+            // viewAfter = out * halfTurn * inv(in) * viewBefore
+            Quaternion viewAfter =
+                outT.rotation *
+                HalfTurn *
+                Quaternion.Inverse(inT.rotation) *
+                viewBefore;
 
-            Quaternion viewLocal = Quaternion.Inverse(inT.rotation) * viewBefore;
-            viewLocal = HalfTurn * viewLocal;
-            Quaternion viewAfter = outT.rotation * viewLocal;
+            // 특이점 fallback도 포탈 변환해서 넘기기(안 그러면 수직 시선에서 yaw가 튐)
+            Vector3 stableYawAfter = TransformDirectionThroughPortal(stableYawBefore, inT, outT);
 
-            // ✅ 핵심: “yaw 특이점” fallback도 포탈 변환해서 넘겨야 시점이 안튐
-            Vector3 stableYawBefore = playerController.GetStableYawForward();
-            Vector3 stableYawAfter = PortalMath.TransformDirection(stableYawBefore, inT, outT);
+            // ✅ 카메라 직접 제어 X : playerBody yaw + cameraRoot pitch만 적용
+            playerController.ApplyViewAfterUpright(viewAfter, stableYawAfter);
 
-            playerController.ForceSetViewUpright(viewAfter, stableYawAfter);
-
+            // 속도는 포탈 변환 유지(낙하 가속/런치 기믹)
             playerController.SetVelocity(newVel);
+
+            // 혹시 남는 각속도 제거(너는 freezeRotation이라 거의 0이겠지만 안전빵)
+            rb.angularVelocity = Vector3.zero;
         }
         else
         {
-            // ===== 일반 오브젝트 =====
+            // ===== 일반 오브젝트: 회전도 포탈 변환 =====
             Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * transform.rotation;
             relativeRot = HalfTurn * relativeRot;
             Quaternion newWorldRot = outT.rotation * relativeRot;
@@ -288,5 +304,13 @@ public class PortalTraveller : MonoBehaviour
 
             rb.linearVelocity = newVel;
         }
+    }
+
+    // ✅ 포탈 방향 변환(정규화 유지)
+    private static Vector3 TransformDirectionThroughPortal(Vector3 worldDir, Transform inPlane, Transform outPlane)
+    {
+        Vector3 local = inPlane.InverseTransformDirection(worldDir);
+        local = HalfTurn * local;
+        return outPlane.TransformDirection(local).normalized;
     }
 }
