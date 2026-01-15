@@ -21,46 +21,52 @@ public class HeldObjectController : MonoBehaviour
     [Header("Collision")]
     [SerializeField] private bool ignoreCollisionWithPlayerWhileHolding = true;
 
+    [Header("Micro Snap (너가 태그한 해결방안)")]
+    [Tooltip("타겟에 거의 붙었을 때 미세 오차를 스냅으로 제거(Portal1 느낌)")]
+    [SerializeField] private bool enableMicroSnap = true;
+
+    [Tooltip("COM 기준 거리 오차(m) 이하면 스냅 후보. 0.01~0.02 추천")]
+    [SerializeField] private float snapPosError = 0.015f;
+
+    [Tooltip("속도 오차(m/s) 이하면 스냅 후보. 0.15~0.35 추천")]
+    [SerializeField] private float snapVelError = 0.25f;
+
+    [Tooltip("스냅 시도 전에 충돌 검사(SweepTest)로 안전장치")]
+    [SerializeField] private bool safeSweepBeforeSnap = true;
+
     public bool IsHolding => heldRb != null;
 
     private Rigidbody heldRb;
     private PortalTraveller heldTraveller;
-
-    // ✅ 추가: 플레이어 워프도 감지해야 "같은 공간으로 합쳐질 때" ThroughPortal을 끌 수 있음
     private PortalTraveller playerTraveller;
 
     private readonly List<Collider> heldCols = new();
     private readonly List<Collider> playerCols = new();
 
-    // ======== ThroughPortal 상태 ========
+    // ===== ThroughPortal 상태 =====
     private bool holdingThroughPortal;
-    private Portal holdingInPortal;   // "플레이어(holdPoint)가 있는 쪽" 포탈
-    private Portal holdingOutPortal;  // "오브젝트가 있는 쪽" 포탈
+    private Portal holdingInPortal;   // 플레이어(holdPoint) 쪽
+    private Portal holdingOutPortal;  // 오브젝트 쪽
 
-    // ✅ 추가: 플레이어/오브젝트가 현재 어느 포탈쪽 공간인지 추적
-    // - 같으면: 같은 공간(=ThroughPortal 필요 없음)
-    // - 다르면: split 상태(=ThroughPortal로 타겟 변환 필요)
+    // ===== 현재 어느 공간인지 추적 =====
     private Portal playerSidePortal;
     private Portal objectSidePortal;
 
     private Quaternion holdRotOffset = Quaternion.identity;
 
-    // ✅ Update/LateUpdate 캐시 (이 값만 FixedUpdate에서 사용)
+    // FixedUpdate에서만 쓸 캐시
     private bool hasCachedTarget;
     private Vector3 cachedTargetPos;
     private Quaternion cachedTargetRot;
-
     private Vector3 cachedTargetVel;
     private Vector3 cachedTargetAngVel;
 
-    private Vector3 prevTargetPos;
-    private Quaternion prevTargetRot;
-    private float prevTargetTime;
-
-    // HeldObjectController.cs 상단 멤버에 추가
+    // 잡는 동안 튜닝 백업/복원
     private float prevMaxAngularVel;
     private int prevSolverIter;
     private int prevSolverVelIter;
+
+    private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
 
     private void Awake()
     {
@@ -84,33 +90,6 @@ public class HeldObjectController : MonoBehaviour
         UnbindPlayerTraveller();
     }
 
-    private void CachePlayerColliders()
-    {
-        playerCols.Clear();
-        Rigidbody prb = ctx ? ctx.PlayerRigidbody : null;
-        if (prb != null)
-            prb.GetComponentsInChildren(true, playerCols);
-    }
-
-    private void CachePlayerTraveller()
-    {
-        if (ctx != null && ctx.PlayerRigidbody != null)
-            playerTraveller = ctx.PlayerRigidbody.GetComponent<PortalTraveller>();
-    }
-
-    private void BindPlayerTraveller()
-    {
-        CachePlayerTraveller();
-        if (playerTraveller != null)
-            playerTraveller.Warped += OnPlayerWarped;
-    }
-
-    private void UnbindPlayerTraveller()
-    {
-        if (playerTraveller != null)
-            playerTraveller.Warped -= OnPlayerWarped;
-    }
-
     public void ToggleHold()
     {
         if (IsHolding) Drop();
@@ -120,10 +99,7 @@ public class HeldObjectController : MonoBehaviour
     private void TryPickup()
     {
         if (!ctx || !ctx.PlayerCamera || !ctx.HoldPoint) return;
-
-        if (!raycaster.TryGetInteractHit(out var hit))
-            return;
-
+        if (!raycaster.TryGetInteractHit(out var hit)) return;
         Pickup(hit);
     }
 
@@ -133,18 +109,15 @@ public class HeldObjectController : MonoBehaviour
 
         heldRb = hit.rb;
 
+        // 물리 튜닝(회전 떨림 완화)
         prevMaxAngularVel = heldRb.maxAngularVelocity;
         prevSolverIter = heldRb.solverIterations;
         prevSolverVelIter = heldRb.solverVelocityIterations;
 
-        // Portal류 홀드에서는 기본값(7rad/s)이 너무 낮아 떨림 원인이 됨
         heldRb.maxAngularVelocity = 50f;
-
-        // 인스펙터에 안 보여도 여기서 올릴 수 있음
         heldRb.solverIterations = 12;
         heldRb.solverVelocityIterations = 12;
 
-        // 콜라이더 캐시
         heldCols.Clear();
         heldRb.GetComponentsInChildren(true, heldCols);
 
@@ -156,13 +129,12 @@ public class HeldObjectController : MonoBehaviour
         BindHeldTraveller();
         BindPlayerTraveller();
 
-        // ✅ pickup 시 "현재 split 상태" 초기화
+        // 공간 추적 초기화
         playerSidePortal = null;
         objectSidePortal = null;
 
         if (hit.throughPortal && hit.inPortal && hit.outPortal)
         {
-            // 플레이어는 inPortal 쪽, 오브젝트는 outPortal 쪽에 있음
             playerSidePortal = hit.inPortal;
             objectSidePortal = hit.outPortal;
         }
@@ -170,8 +142,7 @@ public class HeldObjectController : MonoBehaviour
         RefreshThroughPortalState(force: true);
 
         ResetTargetCache();
-        motor.ResetTargetHistory();
-        ForceCacheNow(); // 첫 프레임 튐 방지
+        ForceCacheNow();
     }
 
     public void Drop()
@@ -201,17 +172,15 @@ public class HeldObjectController : MonoBehaviour
         holdRotOffset = Quaternion.identity;
 
         ResetTargetCache();
-        motor.ResetTargetHistory();
     }
 
     private void FixedUpdate()
     {
         if (!IsHolding) return;
 
-        // 최신 상태 반영
         RefreshThroughPortalState();
 
-        // ThroughPortal이면 링크 깨지면 Drop
+        // ThroughPortal인데 포탈이 깨지면 Drop
         if (holdingThroughPortal)
         {
             if (!holdingInPortal || !holdingOutPortal || !holdingInPortal.IsPlaced || !holdingOutPortal.IsPlaced)
@@ -221,9 +190,15 @@ public class HeldObjectController : MonoBehaviour
             }
         }
 
-        // ✅ Fixed는 캐시만 사용
         if (!hasCachedTarget)
             ForceCacheNow();
+
+        // ✅ (너가 태그한 해결방안) 거의 붙었으면 미세 스냅으로 떨림 제거
+        if (enableMicroSnap && TryMicroSnapToTarget())
+        {
+            // 스냅 성공하면 이번 Fixed에서는 모터 보정 생략해도 됨(더 안정적)
+            return;
+        }
 
         motor.Apply(heldRb, cachedTargetPos, cachedTargetRot, cachedTargetVel, cachedTargetAngVel);
     }
@@ -237,11 +212,53 @@ public class HeldObjectController : MonoBehaviour
     }
 
     // =============================
-    // ✅ ThroughPortal 상태 갱신
+    // Micro Snap (Tagged fix)
+    // =============================
+    private bool TryMicroSnapToTarget()
+    {
+        if (!heldRb) return false;
+
+        Vector3 com = heldRb.worldCenterOfMass;
+        Vector3 posError = cachedTargetPos - com;
+
+        float posErrSqr = posError.sqrMagnitude;
+        float posThreshSqr = snapPosError * snapPosError;
+        if (posErrSqr > posThreshSqr) return false;
+
+        Vector3 velError = cachedTargetVel - heldRb.linearVelocity;
+        float velErrSqr = velError.sqrMagnitude;
+        float velThreshSqr = snapVelError * snapVelError;
+        if (velErrSqr > velThreshSqr) return false;
+
+        // 충돌 안전장치(작은 델타라도 벽 안으로 파고들 수 있으니)
+        if (safeSweepBeforeSnap && posErrSqr > 1e-12f)
+        {
+            Vector3 dir = posError.normalized;
+            float dist = Mathf.Sqrt(posErrSqr);
+
+            // 경로에 뭔가 있으면 스냅 금지(모터로 부드럽게 해결)
+            if (heldRb.SweepTest(dir, out _, dist, QueryTriggerInteraction.Ignore))
+                return false;
+        }
+
+        // ✅ COM이 타겟에 딱 붙도록 rb.position을 같은 델타만큼 이동
+        heldRb.position += posError;
+
+        // 스냅 직후 속도도 타겟에 맞춰 흔들림 종료
+        heldRb.linearVelocity = cachedTargetVel;
+        heldRb.angularVelocity = Vector3.zero;
+
+        // 다음 프레임 캐시 갱신
+        ResetTargetCache();
+        ForceCacheNow();
+        return true;
+    }
+
+    // =============================
+    // ThroughPortal 상태 갱신
     // =============================
     private void RefreshThroughPortalState(bool force = false)
     {
-        // force는 pickup 직후처럼 "무조건 한번 정렬"이 필요할 때만 사용
         bool wasThrough = holdingThroughPortal;
 
         if (playerSidePortal != null && objectSidePortal != null && playerSidePortal != objectSidePortal)
@@ -257,10 +274,9 @@ public class HeldObjectController : MonoBehaviour
             holdingOutPortal = null;
         }
 
-        // ✅ split -> merged 로 바뀌는 순간(=같은 공간이 되는 순간) 튐/빙글빙글 방지 처리
+        // split -> merged 순간 튐/빙글 방지
         if ((force || wasThrough) && !holdingThroughPortal)
         {
-            // 둘 다 값이 있고 같으면 "합쳐짐"으로 판단
             if (playerSidePortal != null && objectSidePortal != null && playerSidePortal == objectSidePortal)
             {
                 RebaseHoldRotationToCurrent();
@@ -281,26 +297,19 @@ public class HeldObjectController : MonoBehaviour
         if (!heldRb || !ctx || !ctx.HoldPoint) return;
 
         Vector3 snapPos = ctx.HoldPoint.position;
+        Vector3 baseVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
+        Vector3 snapVel = holdingThroughPortal ? TransformDirThroughPortal(baseVel, holdingInPortal.Plane, holdingOutPortal.Plane) : baseVel;
 
-        Vector3 snapVel = Vector3.zero;
-        if (ctx.PlayerRigidbody != null)
-            snapVel = ctx.PlayerRigidbody.linearVelocity;
-
-        // 위치는 확정적으로 붙여버림 (Portal1 느낌)
         heldRb.position = snapPos;
-
-        // 속도/각속도도 정리 (원형 이동/떨림/오차 누적 방지)
         heldRb.linearVelocity = snapVel;
         heldRb.angularVelocity = Vector3.zero;
 
-        // 모터/캐시 히스토리 리셋
-        motor.ResetTargetHistory();
         ResetTargetCache();
         ForceCacheNow();
     }
 
     // =============================
-    // ✅ 핵심: LateUpdate 캐시 로직
+    // 캐시(중요: ThroughPortal이면 Velocity도 변환!)
     // =============================
     private void ResetTargetCache()
     {
@@ -309,10 +318,6 @@ public class HeldObjectController : MonoBehaviour
         cachedTargetRot = Quaternion.identity;
         cachedTargetVel = Vector3.zero;
         cachedTargetAngVel = Vector3.zero;
-
-        prevTargetTime = 0f;
-        prevTargetPos = Vector3.zero;
-        prevTargetRot = Quaternion.identity;
     }
 
     private void ForceCacheNow()
@@ -324,68 +329,75 @@ public class HeldObjectController : MonoBehaviour
     {
         if (!ctx || !ctx.HoldPoint) return;
 
-        // 1) 기본 타겟(플레이어 앞 HoldPoint)
         Vector3 targetPos = ctx.HoldPoint.position;
 
         Quaternion frameRot = GetHoldFrameRotation();
         Quaternion targetRot = frameRot * holdRotOffset;
 
-        // 2) ThroughPortal이면 타겟을 포탈 변환한 위치로
+        // 기본 targetVel: 플레이어 RB 속도
+        Vector3 baseVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
+        Vector3 targetVel = baseVel;
+
         if (holdingThroughPortal)
         {
             targetPos = PortalMath.TransformPoint(targetPos, holdingInPortal.Plane, holdingOutPortal.Plane);
             targetRot = PortalMath.TransformRotation(targetRot, holdingInPortal.Plane, holdingOutPortal.Plane);
-        }
 
-        float t = Time.time;
-
-        if (forceNoVelocity || prevTargetTime <= 0f)
-        {
-            cachedTargetVel = Vector3.zero;
-            cachedTargetAngVel = Vector3.zero;
-
-            prevTargetPos = targetPos;
-            prevTargetRot = targetRot;
-            prevTargetTime = t;
-        }
-        else
-        {
-            float dt = t - prevTargetTime;
-            if (dt < 1e-6f) dt = 1e-6f;
-
-            cachedTargetVel = (targetPos - prevTargetPos) / dt;
-            cachedTargetAngVel = CalcAngularVelocity(prevTargetRot, targetRot, dt);
-
-            prevTargetPos = targetPos;
-            prevTargetRot = targetRot;
-            prevTargetTime = t;
+            // ✅ 핵심: 속도도 포탈 변환해야 떨림이 크게 줄어듦
+            targetVel = TransformDirThroughPortal(baseVel, holdingInPortal.Plane, holdingOutPortal.Plane);
         }
 
         cachedTargetPos = targetPos;
         cachedTargetRot = targetRot;
+
+        cachedTargetVel = forceNoVelocity ? Vector3.zero : targetVel;
+        cachedTargetAngVel = Vector3.zero; // 안정 우선(필요하면 나중에만 추가)
+
         hasCachedTarget = true;
     }
 
-    private static Vector3 CalcAngularVelocity(Quaternion prev, Quaternion cur, float dt)
+    // in->out 방향 벡터 변환(PortalTraveller의 HalfTurn 규칙과 동일)
+    private static Vector3 TransformDirThroughPortal(Vector3 dirWorld, Transform inT, Transform outT)
     {
-        Quaternion dq = cur * Quaternion.Inverse(prev);
-        dq.ToAngleAxis(out float angleDeg, out Vector3 axis);
-
-        if (axis.sqrMagnitude < 1e-8f) return Vector3.zero;
-        if (angleDeg > 180f) angleDeg -= 360f;
-
-        axis.Normalize();
-        float angleRad = angleDeg * Mathf.Deg2Rad;
-        return axis * (angleRad / Mathf.Max(1e-6f, dt));
+        Vector3 local = inT.InverseTransformDirection(dirWorld);
+        local = HalfTurn * local;
+        return outT.TransformDirection(local);
     }
 
     // =============================
-    // ✅ Held 오브젝트 워프 대응
+    // 워프 이벤트
     // =============================
+    private void CachePlayerColliders()
+    {
+        playerCols.Clear();
+        Rigidbody prb = ctx ? ctx.PlayerRigidbody : null;
+        if (prb != null)
+            prb.GetComponentsInChildren(true, playerCols);
+    }
+
+    private void CachePlayerTraveller()
+    {
+        if (ctx != null && ctx.PlayerRigidbody != null)
+            playerTraveller = ctx.PlayerRigidbody.GetComponent<PortalTraveller>();
+    }
+
+    private void BindPlayerTraveller()
+    {
+        UnbindPlayerTraveller();
+        CachePlayerTraveller();
+        if (playerTraveller != null)
+            playerTraveller.Warped += OnPlayerWarped;
+    }
+
+    private void UnbindPlayerTraveller()
+    {
+        if (playerTraveller != null)
+            playerTraveller.Warped -= OnPlayerWarped;
+    }
+
     private void BindHeldTraveller()
     {
         UnbindHeldTraveller();
-
         if (!heldRb) return;
 
         heldTraveller = heldRb.GetComponent<PortalTraveller>();
@@ -404,47 +416,28 @@ public class HeldObjectController : MonoBehaviour
     {
         if (!IsHolding) return;
 
-        // object는 to 쪽 공간으로 이동
         objectSidePortal = to;
+        if (playerSidePortal == null) playerSidePortal = from;
 
-        // playerSide가 아직 미정이면, object가 떠난 쪽(from)을 playerSide로 가정
-        if (playerSidePortal == null)
-            playerSidePortal = from;
-
-        // 상태 갱신 + 캐시 리셋
-        bool wasThrough = holdingThroughPortal;
         RefreshThroughPortalState();
-
         ResetTargetCache();
-        motor.ResetTargetHistory();
         ForceCacheNow();
     }
 
-    // =============================
-    // ✅ Player 워프 대응 (여기가 이번 문제의 핵심)
-    // =============================
     private void OnPlayerWarped(Portal from, Portal to)
     {
         if (!IsHolding) return;
 
-        // player는 to 쪽 공간으로 이동
         playerSidePortal = to;
+        if (objectSidePortal == null) objectSidePortal = from;
 
-        // objectSide가 아직 미정이면, player가 떠난 쪽(from)을 objectSide로 가정
-        if (objectSidePortal == null)
-            objectSidePortal = from;
-
-        // ✅ 여기서 merged가 되면 즉시 SnapHeldToHoldPoint()가 걸려서
-        // "포탈 한바퀴 돌고 붙는" 현상이 사라짐
         RefreshThroughPortalState();
-
         ResetTargetCache();
-        motor.ResetTargetHistory();
         ForceCacheNow();
     }
 
     // =============================
-    // Rotation: pickup-time snap/keep
+    // 회전 오프셋(Pickup 시)
     // =============================
     private void SetupGrabRotation(RaycastHit rbHit)
     {
@@ -496,6 +489,9 @@ public class HeldObjectController : MonoBehaviour
         return Quaternion.LookRotation(f, Vector3.up);
     }
 
+    // =============================
+    // 충돌 무시
+    // =============================
     private void SetIgnorePlayerCollision(bool ignore)
     {
         if (heldCols.Count == 0 || playerCols.Count == 0) return;

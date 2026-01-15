@@ -136,7 +136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &209347948
 Transform:
   m_ObjectHideFlags: 0
@@ -171,8 +171,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 1, z: 1}
-  m_Center: {x: 0, y: -2.5, z: -0.5}
+  m_Size: {x: 2, y: 0.3, z: 1}
+  m_Center: {x: 0, y: -2.2, z: -0.5}
 --- !u!33 &209347950
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -294,7 +294,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 244608180}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: af20d3639f459cb4caab37499ed66ebe, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2752,7 +2752,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1419816597}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: af20d3639f459cb4caab37499ed66ebe, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2822,7 +2822,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1448424739
 Transform:
   m_ObjectHideFlags: 0
@@ -2857,8 +2857,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 1, z: 1}
-  m_Center: {x: 0, y: -2.5, z: -0.5}
+  m_Size: {x: 2, y: 0.3, z: 1}
+  m_Center: {x: 0, y: -2.2, z: -0.5}
 --- !u!33 &1448424741
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3021,7 +3021,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.835, y: 1.1, z: 7.849}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1280825932}
@@ -3272,7 +3272,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1921721459
 Transform:
   m_ObjectHideFlags: 0
@@ -3307,8 +3307,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 1, z: 1}
-  m_Center: {x: 0, y: 2.5, z: -0.5}
+  m_Size: {x: 2, y: 0.3, z: 1}
+  m_Center: {x: 0, y: 2.2, z: -0.5}
 --- !u!33 &1921721461
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3436,7 +3436,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1935816313
 Transform:
   m_ObjectHideFlags: 0
@@ -3471,8 +3471,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 1, z: 1}
-  m_Center: {x: 0, y: 2.5, z: -0.5}
+  m_Size: {x: 2, y: 0.3, z: 1}
+  m_Center: {x: 0, y: 2.2, z: -0.5}
 --- !u!33 &1935816315
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3527,6 +3527,10 @@ MonoBehaviour:
   snapFaceTowardPlayer: 1
   useYawOnlyFrame: 1
   ignoreCollisionWithPlayerWhileHolding: 1
+  enableMicroSnap: 1
+  snapPosError: 0.015
+  snapVelError: 0.25
+  safeSweepBeforeSnap: 1
 --- !u!114 &1938322372
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3539,14 +3543,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d8b4334d76f04a43a5e6a2b320a9cd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  positionCatchTime: 0.05
-  maxSpeed: 25
-  maxAccel: 200
+  positionCatchTime: 0.06
+  maxSpeed: 35
+  maxAccel: 350
   driveRotation: 1
   rotationCatchTime: 0.08
-  maxAngularSpeed: 40
-  maxAngularAccel: 500
-  estimateTargetVelocity: 1
+  maxAngularSpeed: 50
+  maxAngularAccel: 800
+  enableSettle: 1
+  settlePosEps: 0.012
+  settleVelEps: 0.2
+  useMoveWhenSettle: 1
+  safeSweepBeforeSettle: 1
 --- !u!114 &1938322373
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3924,7 +3932,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3454292709574330477}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: af20d3639f459cb4caab37499ed66ebe, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -13996,7 +14004,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3502472092471396664}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: af20d3639f459cb4caab37499ed66ebe, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
