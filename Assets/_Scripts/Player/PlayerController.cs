@@ -10,7 +10,7 @@ public partial class PlayerController : MonoBehaviour
     [SerializeField] private Transform cameraRoot;   // pitch
 
     [Header("Refs (Move)")]
-    [SerializeField] private Transform moveBasis;    // ÀÌµ¿ ±âÁØ(º¸Åë playerBody)
+    [SerializeField] private Transform moveBasis;    // ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ playerBody)
 
     // runtime
     private Rigidbody rb;
@@ -25,7 +25,7 @@ public partial class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         capsule = GetComponent<CapsuleCollider>();
 
-        // ÀÌµ¿ÀÌ Ä¿½ºÅÒ Áß·Â ±¸Á¶´Ï±î ±âº» Áß·Â off ÃßÃµ
+        // ï¿½Ìµï¿½ï¿½ï¿½ Ä¿ï¿½ï¿½ï¿½ï¿½ ï¿½ß·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½âº» ï¿½ß·ï¿½ off ï¿½ï¿½Ãµ
         rb.freezeRotation = true;
         rb.useGravity = false;
 
@@ -37,7 +37,7 @@ public partial class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        // Á¡ÇÁ´Â ÀÌº¥Æ®·Î ¹Þ´Â°Ô ¾ÈÁ¤Àû(´©¸£´Â ÇÁ·¹ÀÓ ³õÄ¡´Â°Å ¹æÁö)
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ®ï¿½ï¿½ ï¿½Þ´Â°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½Â°ï¿½ ï¿½ï¿½ï¿½ï¿½)
         InputManager.OnJump += QueueJump;
     }
 
@@ -48,7 +48,7 @@ public partial class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        // ¿¬¼Ó ÀÔ·ÂÀº ÇÁ·ÎÆÛÆ¼·Î ÀÐ¾î¼­ Ä³½Ì
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½Ð¾î¼­ Ä³ï¿½ï¿½
         moveInput = InputManager.Move;
         lookInput = InputManager.Look;
 
