@@ -23,9 +23,20 @@ public class PortalCloneVisual : MonoBehaviour
 
     private readonly List<(Transform src, Transform dst)> pairs = new();
 
+    // ✅ Instantiate로 생성되는 '복제본'의 Awake가 다시 Clone을 만들지 않게 가드
+    private static int s_cloneBuildDepth = 0;
+
     private void Awake()
     {
+        // ✅ 지금 이 PortalCloneVisual이 "클론 생성 과정에서" 같이 복제된 놈이면 중단
+        if (s_cloneBuildDepth > 0)
+        {
+            enabled = false;
+            return;
+        }
+
         if (!visualRoot) visualRoot = transform;
+
         BuildCloneOnce();
         SetCloneActive(false);
     }
@@ -51,9 +62,7 @@ public class PortalCloneVisual : MonoBehaviour
         if (!inP || !outP) return;
 
         if (active && (inPortal != inP || outPortal != outP))
-        {
             ForceEnd();
-        }
 
         if (insideCount == 0)
         {
@@ -102,22 +111,36 @@ public class PortalCloneVisual : MonoBehaviour
     // ---------- Clone building ----------
     private void BuildCloneOnce()
     {
-        cloneGO = Instantiate(visualRoot.gameObject);
+        if (cloneGO != null) return;
+
+        s_cloneBuildDepth++;
+        try
+        {
+            cloneGO = Instantiate(visualRoot.gameObject);
+        }
+        finally
+        {
+            s_cloneBuildDepth--;
+        }
+
         cloneGO.name = $"{visualRoot.name}_PortalClone";
         cloneRoot = cloneGO.transform;
 
+        // ✅ 생성 즉시 비활성화 (Start/Update 최대한 차단)
+        cloneGO.SetActive(false);
+
+        // 씬에 그대로 떠있게
         cloneRoot.SetParent(null, true);
 
         int layer = LayerMask.NameToLayer(cloneLayerName);
         if (layer >= 0) SetLayerRecursively(cloneRoot, layer);
 
-        foreach (var c in cloneGO.GetComponentsInChildren<Collider>(true)) Destroy(c);
-        foreach (var rb in cloneGO.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
-        foreach (var j in cloneGO.GetComponentsInChildren<Joint>(true)) Destroy(j);
+        // ✅ 중요: "삭제(Destroy)" 금지. 의존성(RequireComponent) 때문에 에러 난다.
+        // 대신 물리/스크립트를 전부 무력화한다.
+        DisableClonePhysics(cloneGO);
+        DisableCloneBehaviours(cloneGO);
 
-        foreach (var mb in cloneGO.GetComponentsInChildren<MonoBehaviour>(true)) Destroy(mb);
-        foreach (var an in cloneGO.GetComponentsInChildren<Animator>(true)) Destroy(an);
-
+        // 트랜스폼 매핑
         pairs.Clear();
         BuildPairsRecursive(visualRoot, cloneRoot);
 
@@ -172,5 +195,51 @@ public class PortalCloneVisual : MonoBehaviour
         root.gameObject.layer = layer;
         for (int i = 0; i < root.childCount; i++)
             SetLayerRecursively(root.GetChild(i), layer);
+    }
+
+    // =========================
+    // ✅ Clone 무력화 유틸
+    // =========================
+
+    private static void DisableClonePhysics(GameObject go)
+    {
+        // 콜라이더 전부 OFF (트리거/충돌/레이캐스트 영향 제거)
+        var cols = go.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < cols.Length; i++)
+        {
+            if (!cols[i]) continue;
+            cols[i].enabled = false;
+        }
+
+        // 리지드바디 전부 완전 무력화
+        var rbs = go.GetComponentsInChildren<Rigidbody>(true);
+        for (int i = 0; i < rbs.Length; i++)
+        {
+            if (!rbs[i]) continue;
+            rbs[i].linearVelocity = Vector3.zero;
+            rbs[i].angularVelocity = Vector3.zero;
+            rbs[i].useGravity = false;
+            rbs[i].isKinematic = true;
+            rbs[i].detectCollisions = false;
+        }
+    }
+
+    private static void DisableCloneBehaviours(GameObject go)
+    {
+        // MonoBehaviour 전부 Disable (렌더러/트랜스폼은 그대로)
+        var mbs = go.GetComponentsInChildren<MonoBehaviour>(true);
+        for (int i = 0; i < mbs.Length; i++)
+        {
+            if (!mbs[i]) continue;
+            mbs[i].enabled = false;
+        }
+
+        // Animator도 필요 없으면 Disable (스켈레톤은 Transform이니까 유지됨)
+        var anims = go.GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < anims.Length; i++)
+        {
+            if (!anims[i]) continue;
+            anims[i].enabled = false;
+        }
     }
 }
