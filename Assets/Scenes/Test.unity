@@ -1292,6 +1292,7 @@ GameObject:
   - component: {fileID: 536967929}
   - component: {fileID: 536967930}
   - component: {fileID: 536967931}
+  - component: {fileID: 536967932}
   m_Layer: 0
   m_Name: GameSystem
   m_TagString: Untagged
@@ -1358,6 +1359,155 @@ MonoBehaviour:
   impactBluePoolKey: ImpactEffect_B
   impactOrangePoolKey: ImpactEffect_O
   fallbackImpactLife: 1
+--- !u!114 &536967932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536967925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87db4b8f0aa0fc748a873e6c2606a614, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sfx:
+  - id: 1
+    clips:
+    - {fileID: 8300000, guid: 65fb5bd4a2bbe774f9e30b9fe308fe2b, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 2
+    clips:
+    - {fileID: 8300000, guid: 53192958104e96e45af6225118c2d321, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 3
+    clips:
+    - {fileID: 8300000, guid: 8cd149ab71e05d04c8d9271dd47632e1, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 4
+    clips:
+    - {fileID: 8300000, guid: 44a6f777a609f624db8006b198e098b2, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 5
+    clips:
+    - {fileID: 8300000, guid: 5d5265f9d85601d4f8b4044cb9239f8d, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 6
+    clips:
+    - {fileID: 8300000, guid: 03fd4716ab00e464e8fda5a35e360254, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 7
+    clips:
+    - {fileID: 8300000, guid: ddeb70dec3870f940abc04b803a37654, type: 3}
+    - {fileID: 8300000, guid: 6727337a19354b745819dae7a7993af6, type: 3}
+    - {fileID: 8300000, guid: 1948b943e1e0b2b449677f3aee712319, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 8
+    clips:
+    - {fileID: 8300000, guid: 5d2da5a58ddfb724293b9e6cdcb9cd1f, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 9
+    clips:
+    - {fileID: 8300000, guid: 72b8cbfc983db0446b9c2bb603a8c16e, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 11
+    clips:
+    - {fileID: 8300000, guid: 55bc605350ab70a45833d6279928377d, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 12
+    clips:
+    - {fileID: 8300000, guid: f48f260824c62ca4bb62a669180af936, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 13
+    clips:
+    - {fileID: 8300000, guid: 61781e858df3474448290162cbb6612b, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 14
+    clips:
+    - {fileID: 8300000, guid: 5a09694c1ea0920439cf7fba5eacf9b3, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 15
+    clips:
+    - {fileID: 8300000, guid: d1a049ce58c80794394a881e1d64d098, type: 3}
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 0
+    clips: []
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  - id: 0
+    clips: []
+    volume: 0
+    pitchRange: {x: 0, y: 0}
+    spatial3D: 0
+    minDistance: 0
+    maxDistance: 0
+  bgm:
+  - id: 2
+    clip: {fileID: 8300000, guid: 6a3e82b34d85e9b419529c42b56dc4b3, type: 3}
+    volume: 0.5
+  masterSfx: 1
+  masterBgm: 1
+  bgmSource: {fileID: 0}
+  sfx2DSource: {fileID: 0}
 --- !u!1 &542444245
 GameObject:
   m_ObjectHideFlags: 0
@@ -3527,10 +3677,8 @@ MonoBehaviour:
   snapFaceTowardPlayer: 1
   useYawOnlyFrame: 1
   ignoreCollisionWithPlayerWhileHolding: 1
-  enableMicroSnap: 1
-  snapPosError: 0.015
-  snapVelError: 0.25
-  safeSweepBeforeSnap: 1
+  useCameraRotationVelocity: 1
+  maxCameraOmega: 60
 --- !u!114 &1938322372
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3545,16 +3693,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   positionCatchTime: 0.06
   maxSpeed: 35
-  maxAccel: 350
+  maxAccel: 300
   driveRotation: 1
   rotationCatchTime: 0.08
   maxAngularSpeed: 50
   maxAngularAccel: 800
-  enableSettle: 1
-  settlePosEps: 0.012
-  settleVelEps: 0.2
-  useMoveWhenSettle: 1
-  safeSweepBeforeSettle: 1
+  enableLock: 1
+  lockEnterPosEps: 0.01
+  lockEnterVelEps: 0.2
+  lockExitPosEps: 0.03
+  lockExitVelEps: 0.6
+  lockFramesRequired: 3
+  lockUseMove: 1
+  lockSafeSweep: 1
 --- !u!114 &1938322373
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14287,7 +14438,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 80
   m_CollisionDetection: 1
 --- !u!1 &5544580752491698514
