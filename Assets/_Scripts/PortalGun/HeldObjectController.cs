@@ -21,18 +21,9 @@ public class HeldObjectController : MonoBehaviour
     [Header("Collision")]
     [SerializeField] private bool ignoreCollisionWithPlayerWhileHolding = true;
 
-    [Header("Micro Snap (너가 태그한 해결방안)")]
-    [Tooltip("타겟에 거의 붙었을 때 미세 오차를 스냅으로 제거(Portal1 느낌)")]
-    [SerializeField] private bool enableMicroSnap = true;
-
-    [Tooltip("COM 기준 거리 오차(m) 이하면 스냅 후보. 0.01~0.02 추천")]
-    [SerializeField] private float snapPosError = 0.015f;
-
-    [Tooltip("속도 오차(m/s) 이하면 스냅 후보. 0.15~0.35 추천")]
-    [SerializeField] private float snapVelError = 0.25f;
-
-    [Tooltip("스냅 시도 전에 충돌 검사(SweepTest)로 안전장치")]
-    [SerializeField] private bool safeSweepBeforeSnap = true;
+    [Header("Camera Rotation Feed-Forward")]
+    [SerializeField] private bool useCameraRotationVelocity = true;
+    [SerializeField] private float maxCameraOmega = 60f; // rad/s clamp
 
     public bool IsHolding => heldRb != null;
 
@@ -43,30 +34,26 @@ public class HeldObjectController : MonoBehaviour
     private readonly List<Collider> heldCols = new();
     private readonly List<Collider> playerCols = new();
 
-    // ===== ThroughPortal 상태 =====
+    // Through-portal holding state
     private bool holdingThroughPortal;
-    private Portal holdingInPortal;   // 플레이어(holdPoint) 쪽
-    private Portal holdingOutPortal;  // 오브젝트 쪽
-
-    // ===== 현재 어느 공간인지 추적 =====
+    private Portal holdingInPortal;
+    private Portal holdingOutPortal;
     private Portal playerSidePortal;
     private Portal objectSidePortal;
 
     private Quaternion holdRotOffset = Quaternion.identity;
 
-    // FixedUpdate에서만 쓸 캐시
-    private bool hasCachedTarget;
-    private Vector3 cachedTargetPos;
-    private Quaternion cachedTargetRot;
-    private Vector3 cachedTargetVel;
-    private Vector3 cachedTargetAngVel;
-
-    // 잡는 동안 튜닝 백업/복원
+    // Restore rb params
     private float prevMaxAngularVel;
     private int prevSolverIter;
     private int prevSolverVelIter;
 
     private static readonly Quaternion HalfTurn = Quaternion.Euler(0f, 180f, 0f);
+
+    // ===== Camera omega cached per frame (Update) =====
+    private Vector3 cachedCamOmega;                 // world rad/s
+    private Quaternion prevCamRotFrame;
+    private bool hasPrevCamRotFrame;
 
     private void Awake()
     {
@@ -78,16 +65,60 @@ public class HeldObjectController : MonoBehaviour
         CachePlayerTraveller();
     }
 
-    private void OnEnable()
-    {
-        InputManager.OnInteract += ToggleHold;
-    }
+    private void OnEnable() => InputManager.OnInteract += ToggleHold;
 
     private void OnDisable()
     {
         InputManager.OnInteract -= ToggleHold;
         UnbindHeldTraveller();
         UnbindPlayerTraveller();
+    }
+
+    private void Update()
+    {
+        // ✅ omega는 프레임(Update)에서만 계산해서 Fixed에서 튀는 현상 제거
+        if (!IsHolding || !useCameraRotationVelocity || ctx == null || ctx.PlayerCamera == null)
+            return;
+
+        float dt = Time.deltaTime;
+        if (dt <= 0f)
+        {
+            cachedCamOmega = Vector3.zero;
+            return;
+        }
+
+        Quaternion now = ctx.PlayerCamera.transform.rotation;
+
+        if (!hasPrevCamRotFrame)
+        {
+            prevCamRotFrame = now;
+            hasPrevCamRotFrame = true;
+            cachedCamOmega = Vector3.zero;
+            return;
+        }
+
+        Quaternion dq = now * Quaternion.Inverse(prevCamRotFrame);
+        prevCamRotFrame = now;
+
+        dq.ToAngleAxis(out float angleDeg, out Vector3 axis);
+        if (axis.sqrMagnitude < 1e-8f)
+        {
+            cachedCamOmega = Vector3.zero;
+            return;
+        }
+
+        if (angleDeg > 180f) angleDeg -= 360f;
+
+        float angleRad = angleDeg * Mathf.Deg2Rad;
+        axis.Normalize();
+
+        Vector3 omega = axis * (angleRad / Mathf.Max(1e-6f, dt)); // rad/s
+
+        float mag = omega.magnitude;
+        if (mag > maxCameraOmega)
+            omega *= (maxCameraOmega / mag);
+
+        cachedCamOmega = omega;
     }
 
     public void ToggleHold()
@@ -109,7 +140,7 @@ public class HeldObjectController : MonoBehaviour
 
         heldRb = hit.rb;
 
-        // 물리 튜닝(회전 떨림 완화)
+        // 안정화 세팅
         prevMaxAngularVel = heldRb.maxAngularVelocity;
         prevSolverIter = heldRb.solverIterations;
         prevSolverVelIter = heldRb.solverVelocityIterations;
@@ -117,6 +148,7 @@ public class HeldObjectController : MonoBehaviour
         heldRb.maxAngularVelocity = 50f;
         heldRb.solverIterations = 12;
         heldRb.solverVelocityIterations = 12;
+        heldRb.interpolation = RigidbodyInterpolation.Interpolate;
 
         heldCols.Clear();
         heldRb.GetComponentsInChildren(true, heldCols);
@@ -129,7 +161,7 @@ public class HeldObjectController : MonoBehaviour
         BindHeldTraveller();
         BindPlayerTraveller();
 
-        // 공간 추적 초기화
+        // split 상태 초기화
         playerSidePortal = null;
         objectSidePortal = null;
 
@@ -141,8 +173,8 @@ public class HeldObjectController : MonoBehaviour
 
         RefreshThroughPortalState(force: true);
 
-        ResetTargetCache();
-        ForceCacheNow();
+        PrimeCameraOmegaHistory();
+        SnapHeldToHoldPoint();
     }
 
     public void Drop()
@@ -165,22 +197,22 @@ public class HeldObjectController : MonoBehaviour
         holdingThroughPortal = false;
         holdingInPortal = null;
         holdingOutPortal = null;
-
         playerSidePortal = null;
         objectSidePortal = null;
 
         holdRotOffset = Quaternion.identity;
 
-        ResetTargetCache();
+        hasPrevCamRotFrame = false;
+        cachedCamOmega = Vector3.zero;
     }
 
     private void FixedUpdate()
     {
         if (!IsHolding) return;
+        if (!ctx || !ctx.HoldPoint) { Drop(); return; }
 
         RefreshThroughPortalState();
 
-        // ThroughPortal인데 포탈이 깨지면 Drop
         if (holdingThroughPortal)
         {
             if (!holdingInPortal || !holdingOutPortal || !holdingInPortal.IsPlaced || !holdingOutPortal.IsPlaced)
@@ -190,72 +222,12 @@ public class HeldObjectController : MonoBehaviour
             }
         }
 
-        if (!hasCachedTarget)
-            ForceCacheNow();
-
-        // ✅ (너가 태그한 해결방안) 거의 붙었으면 미세 스냅으로 떨림 제거
-        if (enableMicroSnap && TryMicroSnapToTarget())
-        {
-            // 스냅 성공하면 이번 Fixed에서는 모터 보정 생략해도 됨(더 안정적)
-            return;
-        }
-
-        motor.Apply(heldRb, cachedTargetPos, cachedTargetRot, cachedTargetVel, cachedTargetAngVel);
-    }
-
-    private void LateUpdate()
-    {
-        if (!IsHolding) return;
-
-        RefreshThroughPortalState();
-        CacheTargetFromTransforms();
+        ComputeTargetFixed(out var targetPos, out var targetRot, out var targetVel, out var targetAngVel);
+        motor.Apply(heldRb, targetPos, targetRot, targetVel, targetAngVel);
     }
 
     // =============================
-    // Micro Snap (Tagged fix)
-    // =============================
-    private bool TryMicroSnapToTarget()
-    {
-        if (!heldRb) return false;
-
-        Vector3 com = heldRb.worldCenterOfMass;
-        Vector3 posError = cachedTargetPos - com;
-
-        float posErrSqr = posError.sqrMagnitude;
-        float posThreshSqr = snapPosError * snapPosError;
-        if (posErrSqr > posThreshSqr) return false;
-
-        Vector3 velError = cachedTargetVel - heldRb.linearVelocity;
-        float velErrSqr = velError.sqrMagnitude;
-        float velThreshSqr = snapVelError * snapVelError;
-        if (velErrSqr > velThreshSqr) return false;
-
-        // 충돌 안전장치(작은 델타라도 벽 안으로 파고들 수 있으니)
-        if (safeSweepBeforeSnap && posErrSqr > 1e-12f)
-        {
-            Vector3 dir = posError.normalized;
-            float dist = Mathf.Sqrt(posErrSqr);
-
-            // 경로에 뭔가 있으면 스냅 금지(모터로 부드럽게 해결)
-            if (heldRb.SweepTest(dir, out _, dist, QueryTriggerInteraction.Ignore))
-                return false;
-        }
-
-        // ✅ COM이 타겟에 딱 붙도록 rb.position을 같은 델타만큼 이동
-        heldRb.position += posError;
-
-        // 스냅 직후 속도도 타겟에 맞춰 흔들림 종료
-        heldRb.linearVelocity = cachedTargetVel;
-        heldRb.angularVelocity = Vector3.zero;
-
-        // 다음 프레임 캐시 갱신
-        ResetTargetCache();
-        ForceCacheNow();
-        return true;
-    }
-
-    // =============================
-    // ThroughPortal 상태 갱신
+    // ThroughPortal state
     // =============================
     private void RefreshThroughPortalState(bool force = false)
     {
@@ -274,12 +246,13 @@ public class HeldObjectController : MonoBehaviour
             holdingOutPortal = null;
         }
 
-        // split -> merged 순간 튐/빙글 방지
+        // split -> merged 순간: 기준 재정렬 + 스파이크 방지 + 스냅
         if ((force || wasThrough) && !holdingThroughPortal)
         {
             if (playerSidePortal != null && objectSidePortal != null && playerSidePortal == objectSidePortal)
             {
                 RebaseHoldRotationToCurrent();
+                PrimeCameraOmegaHistory();
                 SnapHeldToHoldPoint();
             }
         }
@@ -296,85 +269,81 @@ public class HeldObjectController : MonoBehaviour
     {
         if (!heldRb || !ctx || !ctx.HoldPoint) return;
 
-        Vector3 snapPos = ctx.HoldPoint.position;
-        Vector3 baseVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
-        Vector3 snapVel = holdingThroughPortal ? TransformDirThroughPortal(baseVel, holdingInPortal.Plane, holdingOutPortal.Plane) : baseVel;
-
-        heldRb.position = snapPos;
-        heldRb.linearVelocity = snapVel;
-        heldRb.angularVelocity = Vector3.zero;
-
-        ResetTargetCache();
-        ForceCacheNow();
-    }
-
-    // =============================
-    // 캐시(중요: ThroughPortal이면 Velocity도 변환!)
-    // =============================
-    private void ResetTargetCache()
-    {
-        hasCachedTarget = false;
-        cachedTargetPos = Vector3.zero;
-        cachedTargetRot = Quaternion.identity;
-        cachedTargetVel = Vector3.zero;
-        cachedTargetAngVel = Vector3.zero;
-    }
-
-    private void ForceCacheNow()
-    {
-        CacheTargetFromTransforms(forceNoVelocity: true);
-    }
-
-    private void CacheTargetFromTransforms(bool forceNoVelocity = false)
-    {
-        if (!ctx || !ctx.HoldPoint) return;
-
         Vector3 targetPos = ctx.HoldPoint.position;
+        Quaternion targetRot = GetHoldFrameRotation() * holdRotOffset;
 
-        Quaternion frameRot = GetHoldFrameRotation();
-        Quaternion targetRot = frameRot * holdRotOffset;
+        Vector3 targetVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
 
-        // 기본 targetVel: 플레이어 RB 속도
-        Vector3 baseVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
-        Vector3 targetVel = baseVel;
+        PrimeCameraOmegaHistory();
 
-        if (holdingThroughPortal)
+        if (holdingThroughPortal && holdingInPortal && holdingOutPortal)
         {
             targetPos = PortalMath.TransformPoint(targetPos, holdingInPortal.Plane, holdingOutPortal.Plane);
             targetRot = PortalMath.TransformRotation(targetRot, holdingInPortal.Plane, holdingOutPortal.Plane);
-
-            // ✅ 핵심: 속도도 포탈 변환해야 떨림이 크게 줄어듦
-            targetVel = TransformDirThroughPortal(baseVel, holdingInPortal.Plane, holdingOutPortal.Plane);
+            targetVel = TransformDirection(targetVel, holdingInPortal.Plane, holdingOutPortal.Plane);
         }
 
-        cachedTargetPos = targetPos;
-        cachedTargetRot = targetRot;
-
-        cachedTargetVel = forceNoVelocity ? Vector3.zero : targetVel;
-        cachedTargetAngVel = Vector3.zero; // 안정 우선(필요하면 나중에만 추가)
-
-        hasCachedTarget = true;
+        motor.Snap(heldRb, targetPos, targetRot, targetVel);
     }
 
-    // in->out 방향 벡터 변환(PortalTraveller의 HalfTurn 규칙과 동일)
-    private static Vector3 TransformDirThroughPortal(Vector3 dirWorld, Transform inT, Transform outT)
+    private void ComputeTargetFixed(out Vector3 targetPos, out Quaternion targetRot, out Vector3 targetVel, out Vector3 targetAngVel)
     {
-        Vector3 local = inT.InverseTransformDirection(dirWorld);
-        local = HalfTurn * local;
-        return outT.TransformDirection(local);
+        Vector3 basePos = ctx.HoldPoint.position;
+
+        Quaternion frameRot = GetHoldFrameRotation();
+        Quaternion baseRot = frameRot * holdRotOffset;
+
+        Vector3 baseVel = (ctx.PlayerRigidbody != null) ? ctx.PlayerRigidbody.linearVelocity : Vector3.zero;
+
+        // ✅ 프레임에서 캐시된 omega로 회전 유도 속도(ω×r) 추가
+        Vector3 velFromRot = Vector3.zero;
+        if (useCameraRotationVelocity && ctx.PlayerCamera != null)
+        {
+            Transform camT = ctx.PlayerCamera.transform;
+            Vector3 r = basePos - camT.position;
+            velFromRot = Vector3.Cross(cachedCamOmega, r);
+        }
+
+        Vector3 baseTargetVel = baseVel + velFromRot;
+
+        targetPos = basePos;
+        targetRot = baseRot;
+        targetVel = baseTargetVel;
+        targetAngVel = Vector3.zero; // 안정 우선
+
+        if (holdingThroughPortal && holdingInPortal && holdingOutPortal)
+        {
+            targetPos = PortalMath.TransformPoint(basePos, holdingInPortal.Plane, holdingOutPortal.Plane);
+            targetRot = PortalMath.TransformRotation(baseRot, holdingInPortal.Plane, holdingOutPortal.Plane);
+            targetVel = TransformDirection(baseTargetVel, holdingInPortal.Plane, holdingOutPortal.Plane);
+        }
+    }
+
+    private void PrimeCameraOmegaHistory()
+    {
+        if (ctx != null && ctx.PlayerCamera != null)
+        {
+            prevCamRotFrame = ctx.PlayerCamera.transform.rotation;
+            hasPrevCamRotFrame = true;
+            cachedCamOmega = Vector3.zero;
+        }
+        else
+        {
+            hasPrevCamRotFrame = false;
+            cachedCamOmega = Vector3.zero;
+        }
+    }
+
+    private static Vector3 TransformDirection(Vector3 dir, Transform inPlane, Transform outPlane)
+    {
+        Vector3 rel = inPlane.InverseTransformDirection(dir);
+        rel = HalfTurn * rel;
+        return outPlane.TransformDirection(rel);
     }
 
     // =============================
-    // 워프 이벤트
+    // Warp events
     // =============================
-    private void CachePlayerColliders()
-    {
-        playerCols.Clear();
-        Rigidbody prb = ctx ? ctx.PlayerRigidbody : null;
-        if (prb != null)
-            prb.GetComponentsInChildren(true, playerCols);
-    }
-
     private void CachePlayerTraveller()
     {
         if (ctx != null && ctx.PlayerRigidbody != null)
@@ -383,7 +352,6 @@ public class HeldObjectController : MonoBehaviour
 
     private void BindPlayerTraveller()
     {
-        UnbindPlayerTraveller();
         CachePlayerTraveller();
         if (playerTraveller != null)
             playerTraveller.Warped += OnPlayerWarped;
@@ -419,9 +387,9 @@ public class HeldObjectController : MonoBehaviour
         objectSidePortal = to;
         if (playerSidePortal == null) playerSidePortal = from;
 
-        RefreshThroughPortalState();
-        ResetTargetCache();
-        ForceCacheNow();
+        RefreshThroughPortalState(force: true);
+        PrimeCameraOmegaHistory();
+        SnapHeldToHoldPoint();
     }
 
     private void OnPlayerWarped(Portal from, Portal to)
@@ -431,13 +399,13 @@ public class HeldObjectController : MonoBehaviour
         playerSidePortal = to;
         if (objectSidePortal == null) objectSidePortal = from;
 
-        RefreshThroughPortalState();
-        ResetTargetCache();
-        ForceCacheNow();
+        RefreshThroughPortalState(force: true);
+        PrimeCameraOmegaHistory();
+        SnapHeldToHoldPoint();
     }
 
     // =============================
-    // 회전 오프셋(Pickup 시)
+    // Rotation snap at pickup
     // =============================
     private void SetupGrabRotation(RaycastHit rbHit)
     {
@@ -490,8 +458,16 @@ public class HeldObjectController : MonoBehaviour
     }
 
     // =============================
-    // 충돌 무시
+    // Collision ignore
     // =============================
+    private void CachePlayerColliders()
+    {
+        playerCols.Clear();
+        Rigidbody prb = ctx ? ctx.PlayerRigidbody : null;
+        if (prb != null)
+            prb.GetComponentsInChildren(true, playerCols);
+    }
+
     private void SetIgnorePlayerCollision(bool ignore)
     {
         if (heldCols.Count == 0 || playerCols.Count == 0) return;
