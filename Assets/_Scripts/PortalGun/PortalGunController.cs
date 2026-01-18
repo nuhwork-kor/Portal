@@ -12,7 +12,7 @@ public class PortalGunController : MonoBehaviour
 
     [Header("Fire Refs")]
     [SerializeField] private Transform muzzle;
-    [SerializeField] private PortalSystem portalSystem;
+    [SerializeField] private PortalManager portalManager;
 
     [Header("Portal Refs (권장: 인스펙터 할당)")]
     [SerializeField] private Portal bluePortal;
@@ -23,7 +23,7 @@ public class PortalGunController : MonoBehaviour
     public Transform HoldPoint => holdPoint;
 
     public Transform Muzzle => muzzle;
-    public PortalSystem PortalSystem => portalSystem;
+    public PortalManager PortalManager => portalManager;
 
     public Portal BluePortal => bluePortal;
     public Portal OrangePortal => orangePortal;
@@ -43,7 +43,7 @@ public class PortalGunController : MonoBehaviour
             if (!playerRigidbody) playerRigidbody = GetComponent<Rigidbody>();
         }
 
-        if (!portalSystem) portalSystem = FindAnyObjectByType<PortalSystem>();
+        if (!portalManager) portalManager = FindAnyObjectByType<PortalManager>();
 
         // 포탈 자동탐색(인스펙터 할당이 최우선)
         if (!bluePortal || !orangePortal)

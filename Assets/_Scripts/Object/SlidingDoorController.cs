@@ -10,12 +10,8 @@ public class SlidingDoor : MonoBehaviour
     [SerializeField] private Transform rightPanel;
 
     [Header("Motion")]
-    [Tooltip("열릴 때 각 패널이 local 기준으로 이동할 거리(양수)")]
     [SerializeField] private float slideDistance = 2.6f;
-
-    [Tooltip("열리고 닫히는 시간(초)")]
     [SerializeField] private float moveDuration = 0.6f;
-
     [SerializeField] private bool smoothStep = true;
 
     private Vector3 leftClosed;
@@ -38,7 +34,6 @@ public class SlidingDoor : MonoBehaviour
         leftClosed = leftPanel.localPosition;
         rightClosed = rightPanel.localPosition;
 
-        // 왼쪽은 왼쪽 벽으로(-X), 오른쪽은 오른쪽 벽으로(+X) 밀려 들어간다고 가정
         leftOpen = leftClosed + Vector3.left * Mathf.Abs(slideDistance);
         rightOpen = rightClosed + Vector3.right * Mathf.Abs(slideDistance);
     }
@@ -47,6 +42,10 @@ public class SlidingDoor : MonoBehaviour
     {
         if (IsOpen) return;
         IsOpen = true;
+
+        // ✅ SFX: 문 인터랙트(3D로 문 위치에서)
+        SoundManager.PlaySFX(SfxId.Door_Interact, worldPos: transform.position);
+
         StartMove(leftOpen, rightOpen);
     }
 
@@ -54,6 +53,10 @@ public class SlidingDoor : MonoBehaviour
     {
         if (!IsOpen) return;
         IsOpen = false;
+
+        // ✅ SFX: 문 인터랙트
+        SoundManager.PlaySFX(SfxId.Door_Interact, worldPos: transform.position);
+
         StartMove(leftClosed, rightClosed);
     }
 

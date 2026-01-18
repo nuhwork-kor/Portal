@@ -34,9 +34,9 @@ public class PortalEffectManager : MonoBehaviour
         muzzleOrangeAll = muzzleOrange ? muzzleOrange.GetComponentsInChildren<ParticleSystem>(true) : null;
     }
 
-    public void PlayMuzzle(PortalSystem.PortalType type)
+    public void PlayMuzzle(PortalManager.PortalType type)
     {
-        var arr = (type == PortalSystem.PortalType.Blue) ? muzzleBlueAll : muzzleOrangeAll;
+        var arr = (type == PortalManager.PortalType.Blue) ? muzzleBlueAll : muzzleOrangeAll;
         if (arr == null || arr.Length == 0) return;
 
         // 매번 확실하게 “시간 0 리셋 + 클리어 + 재생”
@@ -59,11 +59,11 @@ public class PortalEffectManager : MonoBehaviour
         }
     }
 
-    public void PlayImpact(PortalSystem.PortalType type, Vector3 pos, Vector3 normal)
+    public void PlayImpact(PortalManager.PortalType type, Vector3 pos, Vector3 normal)
     {
         if (ObjectPoolManager.Instance == null) return;
 
-        string key = (type == PortalSystem.PortalType.Blue) ? impactBluePoolKey : impactOrangePoolKey;
+        string key = (type == PortalManager.PortalType.Blue) ? impactBluePoolKey : impactOrangePoolKey;
         if (string.IsNullOrEmpty(key)) return;
 
         Quaternion rot = Quaternion.LookRotation(normal, Vector3.up);

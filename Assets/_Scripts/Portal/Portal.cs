@@ -52,6 +52,9 @@ public class Portal : MonoBehaviour
             surfaceRenderer.enabled = placed && otherPortal != null && otherPortal.IsPlaced;
 
         if (!placed) WallColliderCached = null;
+        if (otherPortal) otherPortal.RefreshSurfaceVisibility();
+
+
     }
 
     public void Reposition(Collider wallCollider, Vector3 pos, Quaternion rot, float surfaceOffset)
@@ -65,7 +68,7 @@ public class Portal : MonoBehaviour
         SetPlaced(true);
     }
 
-    // PortalSystem에서 다른 포탈 배치 후, 화면 on/off 갱신 용도
+    // PortalManager에서 다른 포탈 배치 후, 화면 on/off 갱신 용도
     public void RefreshSurfaceVisibility()
     {
         if (surfaceRenderer)

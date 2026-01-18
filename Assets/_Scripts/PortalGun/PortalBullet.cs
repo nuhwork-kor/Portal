@@ -14,8 +14,8 @@ public class PortalBullet : MonoBehaviour
 
     private Rigidbody rb;
 
-    private PortalSystem.PortalType shotType;
-    private PortalSystem portalSystem;
+    private PortalManager.PortalType shotType;
+    private PortalManager portalManager;
 
     private float lifeTimer;
     private float remainingDistance;
@@ -48,10 +48,10 @@ public class PortalBullet : MonoBehaviour
         shootOrangePS = shootOrangeRoot ? shootOrangeRoot.GetComponentsInChildren<ParticleSystem>(true) : null;
     }
 
-    public void Launch(PortalSystem.PortalType type, Vector3 dir, float speed, float maxDistance, PortalSystem system)
+    public void Launch(PortalManager.PortalType type, Vector3 dir, float speed, float maxDistance, PortalManager manager)
     {
         shotType = type;
-        portalSystem = system;
+        portalManager = manager;
 
         lifeTimer = 0f;
         remainingDistance = maxDistance;
@@ -90,8 +90,8 @@ public class PortalBullet : MonoBehaviour
         ContactPoint cp = collision.contacts[0];
 
         bool placed = false;
-        if (portalSystem != null)
-            placed = portalSystem.TryPlacePortal(shotType, cp.point, cp.normal, collision.collider);
+        if (portalManager != null)
+            placed = portalManager.TryPlacePortal(shotType, cp.point, cp.normal, collision.collider);
 
         // 포탈 생성 실패시에만 Impact 재생 + 풀 반환까지 처리
         if (!placed && PortalEffectManager.Instance != null)
@@ -100,11 +100,11 @@ public class PortalBullet : MonoBehaviour
         Despawn();
     }
 
-    private void PlayTrail(PortalSystem.PortalType type)
+    private void PlayTrail(PortalManager.PortalType type)
     {
         StopAllTrail();
 
-        bool blue = (type == PortalSystem.PortalType.Blue);
+        bool blue = (type == PortalManager.PortalType.Blue);
 
         if (shootBlueRoot) shootBlueRoot.gameObject.SetActive(blue);
         if (shootOrangeRoot) shootOrangeRoot.gameObject.SetActive(!blue);
