@@ -39,13 +39,13 @@ public class PortalGunShooter : MonoBehaviour
         InputManager.OnFireOrange -= FireOrange;
     }
 
-    private void FireBlue() => FirePortal(PortalSystem.PortalType.Blue);
-    private void FireOrange() => FirePortal(PortalSystem.PortalType.Orange);
+    private void FireBlue() => FirePortal(PortalManager.PortalType.Blue);
+    private void FireOrange() => FirePortal(PortalManager.PortalType.Orange);
 
-    private void FirePortal(PortalSystem.PortalType type)
+    private void FirePortal(PortalManager.PortalType type)
     {
         if (ctx == null) return;
-        if (!ctx.PlayerCamera || !ctx.PortalSystem) return;
+        if (!ctx.PlayerCamera || !ctx.PortalManager) return;
         if (ObjectPoolManager.Instance == null) return;
 
         if (blockFireWhileHolding && holder != null && holder.IsHolding)
@@ -72,6 +72,9 @@ public class PortalGunShooter : MonoBehaviour
         PortalBullet bullet = obj.GetComponent<PortalBullet>();
         if (!bullet) return;
 
-        bullet.Launch(type, dir, shootSpeed, maxDistance, ctx.PortalSystem);
+        // ✅ SFX: 포탈건 발사
+        SoundManager.PlaySFX(SfxId.PortalGun_Shoot);
+
+        bullet.Launch(type, dir, shootSpeed, maxDistance, ctx.PortalManager);
     }
 }

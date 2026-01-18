@@ -12,6 +12,10 @@ public class PortalTraveller : MonoBehaviour
     [Header("Tuning")]
     [SerializeField] private float exitOffset = 0.0f;
 
+    [Header("Impact SFX (optional)")]
+    [Tooltip("충돌 속도가 이 이상이면 ObjImpact_Cube 재생")]
+    [SerializeField] private float impactMinSpeed = 1.5f;
+
     private Rigidbody rb;
     private Collider col;
     private CapsuleCollider capsule;
@@ -19,10 +23,7 @@ public class PortalTraveller : MonoBehaviour
     private Portal inPortal;
     private Portal outPortal;
 
-    // 벽(포탈 설치된 실제 표면) 콜라이더
     private Collider wallCollider;
-
-    // 포탈 “면” 콜라이더(PortalSurface) 충돌도 무시
     private Collider inSurfaceCol;
     private Collider outSurfaceCol;
 
@@ -84,8 +85,6 @@ public class PortalTraveller : MonoBehaviour
                 SetIgnoredWall(inWall);
 
             outPortal = outP;
-
-            // outPortal 갱신될 수 있으니 surface ignore도 갱신
             SetIgnoredPortalSurfaces(inPortal, outPortal);
         }
 
@@ -118,6 +117,18 @@ public class PortalTraveller : MonoBehaviour
 
         Warp();
 
+        // ✅ SFX: 포탈 진입(워프 발생 순간)
+        if (oldInPortal != null)
+        {
+            // Portal에 색/타입 값이 있다면 그걸 쓰는 게 베스트.
+            // 지금은 이름 기반으로 안전하게 처리(애매하면 애매할수도있는데, 네 네이밍이 바뀌면 여기 수정 필요)
+            string n = oldInPortal.name.ToLowerInvariant();
+            if (n.Contains("blue"))
+                SoundManager.PlaySFX(SfxId.Portal_BlueEnter);
+            else
+                SoundManager.PlaySFX(SfxId.Portal_OrangeEnter);
+        }
+
         Warped?.Invoke(oldInPortal, oldOutPortal);
 
         Collider newWall = null;
@@ -131,11 +142,9 @@ public class PortalTraveller : MonoBehaviour
 
         cooldownUntil = Time.time + teleportCooldown;
 
-        // 포탈쌍 스왑 유지
         inPortal = oldOutPortal;
         outPortal = oldInPortal;
 
-        // 스왑 이후에도 surface ignore 갱신
         SetIgnoredPortalSurfaces(inPortal, outPortal);
 
         insideCount = Mathf.Max(insideCount, 1);
@@ -237,7 +246,6 @@ public class PortalTraveller : MonoBehaviour
         Transform inT = inPortal.Plane;
         Transform outT = outPortal.Plane;
 
-        // ✅ (플레이어면) 워프 전 시야를 먼저 읽어둔다
         Quaternion viewBefore = Quaternion.identity;
         Vector3 stableYawBefore = Vector3.forward;
 
@@ -247,7 +255,6 @@ public class PortalTraveller : MonoBehaviour
             stableYawBefore = playerController.GetStableYawForward();
         }
 
-        // ===== 위치 변환 =====
         Vector3 center = GetCenterWorld();
         Vector3 pivotToCenter = center - transform.position;
 
@@ -260,7 +267,6 @@ public class PortalTraveller : MonoBehaviour
 
         Vector3 newPos = newCenter - pivotToCenter;
 
-        // ===== 속도 변환 =====
         Vector3 relativeVel = inT.InverseTransformDirection(rb.linearVelocity);
         relativeVel = HalfTurn * relativeVel;
         Vector3 newVel = outT.TransformDirection(relativeVel);
@@ -270,29 +276,20 @@ public class PortalTraveller : MonoBehaviour
 
         if (playerController != null)
         {
-            // ===== Portal1처럼 시야 "딸려가기" =====
-            // viewAfter = out * halfTurn * inv(in) * viewBefore
             Quaternion viewAfter =
                 outT.rotation *
                 HalfTurn *
                 Quaternion.Inverse(inT.rotation) *
                 viewBefore;
 
-            // 특이점 fallback도 포탈 변환해서 넘기기(안 그러면 수직 시선에서 yaw가 튐)
             Vector3 stableYawAfter = TransformDirectionThroughPortal(stableYawBefore, inT, outT);
 
-            // ✅ 카메라 직접 제어 X : playerBody yaw + cameraRoot pitch만 적용
             playerController.ApplyViewAfterUpright(viewAfter, stableYawAfter);
-
-            // 속도는 포탈 변환 유지(낙하 가속/런치 기믹)
             playerController.SetVelocity(newVel);
-
-            // 혹시 남는 각속도 제거(너는 freezeRotation이라 거의 0이겠지만 안전빵)
             rb.angularVelocity = Vector3.zero;
         }
         else
         {
-            // ===== 일반 오브젝트: 회전도 포탈 변환 =====
             Quaternion relativeRot = Quaternion.Inverse(inT.rotation) * transform.rotation;
             relativeRot = HalfTurn * relativeRot;
             Quaternion newWorldRot = outT.rotation * relativeRot;
@@ -306,11 +303,27 @@ public class PortalTraveller : MonoBehaviour
         }
     }
 
-    // ✅ 포탈 방향 변환(정규화 유지)
     private static Vector3 TransformDirectionThroughPortal(Vector3 worldDir, Transform inPlane, Transform outPlane)
     {
         Vector3 local = inPlane.InverseTransformDirection(worldDir);
         local = HalfTurn * local;
         return outPlane.TransformDirection(local).normalized;
     }
+
+    // 큐브/오브젝트 충돌 SFX
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (rb == null) return;
+        if (collision == null || collision.contactCount == 0) return;
+
+        if (!(CompareTag("Cube") || CompareTag("Turret")))
+            return;
+
+        float speed = collision.relativeVelocity.magnitude;
+        if (speed < impactMinSpeed) return;
+
+        Vector3 p = collision.GetContact(0).point;
+        SoundManager.PlaySFX(SfxId.ObjImpact_Cube, worldPos: p);
+    }
+
 }

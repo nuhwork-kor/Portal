@@ -15,12 +15,20 @@ public partial class PlayerController
     [SerializeField] private float groundCheckDistance = 0.15f;
     [SerializeField] private float groundCheckRadius = 0.25f;
 
+    [Header("Footstep SFX")]
+    [SerializeField] private float footstepInterval = 0.42f; // 걷기 템포
+    [SerializeField] private float footstepMinSpeed = 0.25f; // 멈춤 잡음 방지
+
     private bool isGrounded;
     private bool jumpQueued;
 
+    private bool _wasGrounded;
+    private float _footstepT;
+
     private void InitMove()
     {
-        // nothing now
+        _wasGrounded = false;
+        _footstepT = 0f;
     }
 
     private void QueueJump()
@@ -30,9 +38,18 @@ public partial class PlayerController
 
     private void TickMove(Vector2 move)
     {
+        _wasGrounded = isGrounded;
+
         CheckGround();
 
+        // 착지 순간
+        if (!_wasGrounded && isGrounded)
+            SoundManager.PlaySFX(SfxId.Player_Land);
+
         ApplyMove(move);
+
+        // 발자국(지상 + 실제 이동 중 + 일정 간격)
+        TickFootstepSfx(move);
 
         if (jumpQueued)
         {
@@ -43,6 +60,27 @@ public partial class PlayerController
         ApplyGravity();
 
         rb.angularVelocity = Vector3.zero;
+    }
+
+    private void TickFootstepSfx(Vector2 move)
+    {
+        if (!isGrounded) { _footstepT = 0f; return; }
+
+        Vector3 v = rb.linearVelocity;
+        float planarSpeed = new Vector2(v.x, v.z).magnitude;
+
+        if (planarSpeed < footstepMinSpeed || move.sqrMagnitude < 0.0001f)
+        {
+            _footstepT = 0f;
+            return;
+        }
+
+        _footstepT += Time.deltaTime;
+        if (_footstepT >= footstepInterval)
+        {
+            _footstepT = 0f;
+            SoundManager.PlaySFX(SfxId.Player_Walk);
+        }
     }
 
     private void ApplyMove(Vector2 move)
@@ -105,8 +143,6 @@ public partial class PlayerController
         }
 
         Transform t = capsule.transform;
-
-        // ���� center
         Vector3 center = t.TransformPoint(capsule.center);
 
         float scaleXZ = Mathf.Max(Mathf.Abs(t.lossyScale.x), Mathf.Abs(t.lossyScale.z));
@@ -129,7 +165,6 @@ public partial class PlayerController
         );
     }
 
-    // ��Ż �ڷ���Ʈ �� �ӵ� ���ÿ�
     public void SetVelocity(Vector3 newVel)
     {
         rb.linearVelocity = newVel;

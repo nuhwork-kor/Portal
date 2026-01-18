@@ -30,6 +30,7 @@ public class HeldObjectController : MonoBehaviour
     private Rigidbody heldRb;
     private PortalTraveller heldTraveller;
     private PortalTraveller playerTraveller;
+    private TurretController heldTurret;
 
     private readonly List<Collider> heldCols = new();
     private readonly List<Collider> playerCols = new();
@@ -70,13 +71,17 @@ public class HeldObjectController : MonoBehaviour
     private void OnDisable()
     {
         InputManager.OnInteract -= ToggleHold;
+
+        if (IsHolding) Drop();
+
         UnbindHeldTraveller();
         UnbindPlayerTraveller();
     }
 
+
     private void Update()
     {
-        // ✅ omega는 프레임(Update)에서만 계산해서 Fixed에서 튀는 현상 제거
+        // omega는 프레임(Update)에서만 계산해서 Fixed에서 튀는 현상 제거
         if (!IsHolding || !useCameraRotationVelocity || ctx == null || ctx.PlayerCamera == null)
             return;
 
@@ -140,7 +145,12 @@ public class HeldObjectController : MonoBehaviour
 
         heldRb = hit.rb;
 
-        // 안정화 세팅
+        // ✅ [추가] 터렛이면 "잡힘 상태" 진입(경계태세 펼침 + AI 정지)
+        heldTurret = heldRb.GetComponentInParent<TurretController>();
+        if (heldTurret != null)
+            heldTurret.SetHeld(true);
+
+        // ---- 이하 기존 코드 그대로 ----
         prevMaxAngularVel = heldRb.maxAngularVelocity;
         prevSolverIter = heldRb.solverIterations;
         prevSolverVelIter = heldRb.solverVelocityIterations;
@@ -161,7 +171,6 @@ public class HeldObjectController : MonoBehaviour
         BindHeldTraveller();
         BindPlayerTraveller();
 
-        // split 상태 초기화
         playerSidePortal = null;
         objectSidePortal = null;
 
@@ -177,9 +186,17 @@ public class HeldObjectController : MonoBehaviour
         SnapHeldToHoldPoint();
     }
 
+
     public void Drop()
     {
         if (!heldRb) return;
+
+        // ✅ [추가] 터렛이면 잡힘 해제(비주얼 닫고 감시 상태로 복귀)
+        if (heldTurret != null)
+        {
+            heldTurret.SetHeld(false);
+            heldTurret = null;
+        }
 
         if (ignoreCollisionWithPlayerWhileHolding)
             SetIgnorePlayerCollision(false);
@@ -205,6 +222,7 @@ public class HeldObjectController : MonoBehaviour
         hasPrevCamRotFrame = false;
         cachedCamOmega = Vector3.zero;
     }
+
 
     private void FixedUpdate()
     {
